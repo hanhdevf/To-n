@@ -1,0 +1,218 @@
+import 'package:get_it/get_it.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:galaxymob/core/network/api_client.dart';
+import 'package:galaxymob/core/network/network_info.dart';
+import 'package:galaxymob/features/auth/data/datasources/auth_local_data_source.dart';
+import 'package:galaxymob/features/auth/data/datasources/mock_auth_remote_data_source.dart';
+import 'package:galaxymob/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:galaxymob/features/auth/domain/repositories/auth_repository.dart';
+import 'package:galaxymob/features/auth/domain/usecases/get_current_user.dart';
+import 'package:galaxymob/features/auth/domain/usecases/login_with_email.dart';
+import 'package:galaxymob/features/auth/domain/usecases/logout.dart';
+import 'package:galaxymob/features/auth/domain/usecases/register_with_email.dart';
+import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:galaxymob/features/movies/data/datasources/movie_remote_data_source.dart';
+import 'package:galaxymob/features/movies/data/datasources/tmdb_api_service.dart';
+import 'package:galaxymob/features/movies/data/repositories/movie_repository_impl.dart';
+import 'package:galaxymob/features/movies/domain/repositories/movie_repository.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_movie_details.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_now_playing_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_popular_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_upcoming_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_trending_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/search_movies.dart';
+import 'package:galaxymob/features/movies/presentation/bloc/movie_bloc.dart';
+import 'package:galaxymob/features/movies/data/repositories/genre_repository_impl.dart';
+import 'package:galaxymob/features/movies/domain/repositories/genre_repository.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_genres.dart';
+import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
+import 'package:galaxymob/features/cinema/data/datasources/mock_cinema_data_source.dart';
+import 'package:galaxymob/features/cinema/data/repositories/cinema_repository_impl.dart';
+import 'package:galaxymob/features/cinema/domain/repositories/cinema_repository.dart';
+import 'package:galaxymob/features/cinema/domain/usecases/get_nearby_cinemas.dart';
+import 'package:galaxymob/features/cinema/domain/usecases/get_showtimes.dart';
+import 'package:galaxymob/features/cinema/presentation/bloc/cinema_bloc.dart';
+import 'package:galaxymob/features/booking/data/datasources/mock_seat_data_source.dart';
+import 'package:galaxymob/features/booking/data/datasources/mock_booking_data_source.dart';
+import 'package:galaxymob/features/booking/data/repositories/mock_payment_service.dart';
+import 'package:galaxymob/features/booking/data/repositories/ticket_service_impl.dart';
+import 'package:galaxymob/features/booking/domain/repositories/payment_service.dart';
+import 'package:galaxymob/features/booking/domain/repositories/ticket_service.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
+
+final getIt = GetIt.instance;
+
+Future<void> configureDependencies() async {
+  // Core dependencies
+  final dio = ApiClient().dio;
+  getIt.registerLazySingleton<Dio>(() => dio);
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
+  getIt.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl(getIt<Connectivity>()),
+  );
+
+  // SharedPreferences (async)
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+
+  // Auth data sources
+  getIt.registerLazySingleton<MockAuthRemoteDataSource>(
+    () => MockAuthRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSource(getIt<SharedPreferences>()),
+  );
+
+  // Auth repository
+  getIt.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDataSource: getIt<MockAuthRemoteDataSource>(),
+      localDataSource: getIt<AuthLocalDataSource>(),
+    ),
+  );
+
+  // Auth use cases
+  getIt.registerLazySingleton(() => LoginWithEmail(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => RegisterWithEmail(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => GetCurrentUser(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => Logout(getIt<AuthRepository>()));
+
+  // Auth BLoC
+  getIt.registerFactory(
+    () => AuthBloc(
+      loginWithEmail: getIt<LoginWithEmail>(),
+      registerWithEmail: getIt<RegisterWithEmail>(),
+      getCurrentUser: getIt<GetCurrentUser>(),
+      logout: getIt<Logout>(),
+    ),
+  );
+
+  // Movie data sources
+  getIt.registerLazySingleton<TmdbApiService>(
+    () => TmdbApiService(dio),
+  );
+  getIt.registerLazySingleton<MovieRemoteDataSource>(
+    () => MovieRemoteDataSource(getIt<TmdbApiService>()),
+  );
+
+  // Movie repository
+  getIt.registerLazySingleton<MovieRepository>(
+    () => MovieRepositoryImpl(
+      remoteDataSource: getIt<MovieRemoteDataSource>(),
+    ),
+  );
+
+  // Genre repository
+  getIt.registerLazySingleton<GenreRepository>(
+    () => GenreRepositoryImpl(
+      getIt<TmdbApiService>(),
+    ),
+  );
+
+  // Movie use cases
+  getIt.registerLazySingleton(
+      () => GetNowPlayingMovies(getIt<MovieRepository>()));
+  getIt.registerLazySingleton(() => GetPopularMovies(getIt<MovieRepository>()));
+  getIt
+      .registerLazySingleton(() => GetUpcomingMovies(getIt<MovieRepository>()));
+  getIt.registerLazySingleton(() => GetMovieDetails(getIt<MovieRepository>()));
+  getIt.registerLazySingleton(() => SearchMovies(getIt<MovieRepository>()));
+  getIt
+      .registerLazySingleton(() => GetTrendingMovies(getIt<MovieRepository>()));
+
+  // Genre use cases
+  getIt.registerLazySingleton(() => GetGenres(getIt<GenreRepository>()));
+
+  // Movie BLoC
+  getIt.registerFactory(
+    () => MovieBloc(
+      getNowPlayingMovies: getIt<GetNowPlayingMovies>(),
+      getPopularMovies: getIt<GetPopularMovies>(),
+      getUpcomingMovies: getIt<GetUpcomingMovies>(),
+      getTrendingMovies: getIt<GetTrendingMovies>(),
+      getMovieDetails: getIt<GetMovieDetails>(),
+      searchMovies: getIt<SearchMovies>(),
+    ),
+  );
+
+  // Genre BLoC
+  getIt.registerFactory(
+    () => GenreBloc(
+      getGenres: getIt<GetGenres>(),
+    ),
+  );
+
+  // Cinema data sources
+  getIt.registerLazySingleton<MockCinemaDataSource>(
+    () => MockCinemaDataSource(),
+  );
+
+  // Cinema repository
+  getIt.registerLazySingleton<CinemaRepository>(
+    () => CinemaRepositoryImpl(
+      dataSource: getIt<MockCinemaDataSource>(),
+    ),
+  );
+
+  // Cinema use cases
+  getIt
+      .registerLazySingleton(() => GetNearbyCinemas(getIt<CinemaRepository>()));
+  getIt.registerLazySingleton(() => GetShowtimes(getIt<CinemaRepository>()));
+
+  // Cinema BLoC
+  getIt.registerFactory(
+    () => CinemaBloc(
+      getNearbyCinemas: getIt<GetNearbyCinemas>(),
+      getShowtimes: getIt<GetShowtimes>(),
+    ),
+  );
+
+  // Booking data sources
+  getIt.registerLazySingleton<MockSeatDataSource>(
+    () => MockSeatDataSource(),
+  );
+
+  getIt.registerLazySingleton<MockBookingDataSource>(
+    () => MockBookingDataSource(),
+  );
+
+  // Payment service
+  getIt.registerLazySingleton<PaymentService>(
+    () => MockPaymentService(),
+  );
+
+  // Ticket service
+  getIt.registerLazySingleton<TicketService>(
+    () => TicketServiceImpl(),
+  );
+
+  // Booking BLoCs
+  getIt.registerFactory(
+    () => SeatBloc(
+      dataSource: getIt<MockSeatDataSource>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => PaymentBloc(
+      paymentService: getIt<PaymentService>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => TicketBloc(
+      ticketService: getIt<TicketService>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => BookingBloc(
+      dataSource: getIt<MockBookingDataSource>(),
+    ),
+  );
+}
