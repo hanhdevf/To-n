@@ -3,6 +3,8 @@ import 'package:galaxymob/core/error/exceptions.dart';
 import 'package:galaxymob/core/error/failures.dart';
 import 'package:galaxymob/features/movies/data/datasources/movie_remote_data_source.dart';
 import 'package:galaxymob/features/movies/domain/entities/movie.dart';
+import 'package:galaxymob/features/movies/domain/entities/cast.dart';
+import 'package:galaxymob/features/movies/domain/entities/review.dart';
 import 'package:galaxymob/features/movies/domain/repositories/movie_repository.dart';
 
 /// Implementation of MovieRepository
@@ -19,6 +21,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -32,6 +36,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -45,6 +51,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -58,6 +66,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -71,6 +81,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -83,6 +95,8 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movieModel.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -102,6 +116,64 @@ class MovieRepositoryImpl implements MovieRepository {
       return Right(movies);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Movie>>> discoverMovies({
+    int page = 1,
+    String? withGenres,
+    int? year,
+    String? sortBy,
+  }) async {
+    try {
+      final movieModels = await remoteDataSource.discoverMovies(
+        page: page,
+        withGenres: withGenres,
+        year: year,
+        sortBy: sortBy,
+      );
+      final movies = movieModels.map((model) => model.toEntity()).toList();
+      return Right(movies);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Cast>>> getMovieCredits(int movieId) async {
+    try {
+      final creditsModel = await remoteDataSource.getMovieCredits(movieId);
+      final cast = creditsModel.cast.map((model) => model.toEntity()).toList();
+      return Right(cast);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Review>>> getMovieReviews(int movieId) async {
+    try {
+      final reviewsModel = await remoteDataSource.getMovieReviews(movieId);
+      final reviews =
+          reviewsModel.results.map((model) => model.toEntity()).toList();
+      return Right(reviews);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }

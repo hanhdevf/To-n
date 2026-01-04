@@ -1,14 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:galaxymob/features/booking/data/datasources/mock_seat_data_source.dart';
 import 'package:galaxymob/features/booking/domain/entities/seat.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_seat_layout.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_state.dart';
 
 /// BLoC for handling seat selection logic
 class SeatBloc extends Bloc<SeatEvent, SeatState> {
-  final MockSeatDataSource dataSource;
+  final GetSeatLayout getSeatLayout;
 
-  SeatBloc({required this.dataSource}) : super(const SeatInitial()) {
+  SeatBloc({required this.getSeatLayout}) : super(const SeatInitial()) {
     on<LoadSeatLayoutEvent>(_onLoadSeatLayout);
     on<ToggleSeatEvent>(_onToggleSeat);
     on<ClearSelectionEvent>(_onClearSelection);
@@ -20,23 +20,26 @@ class SeatBloc extends Bloc<SeatEvent, SeatState> {
   ) async {
     emit(const SeatLoading());
 
-    try {
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
 
-      final seatLayout = dataSource.generateSeatLayout(
+    final result = await getSeatLayout(
+      SeatLayoutParams(
         showtimeId: event.showtimeId,
         basePrice: event.basePrice,
-      );
+      ),
+    );
 
-      emit(SeatLayoutLoaded(
-        seatLayout: seatLayout,
-        selectedSeats: const [],
-        totalPrice: 0,
-      ));
-    } catch (e) {
-      emit(SeatError(e.toString()));
-    }
+    result.fold(
+      (failure) => emit(SeatError(failure.message)),
+      (seatLayout) {
+        emit(SeatLayoutLoaded(
+          seatLayout: seatLayout,
+          selectedSeats: const [],
+          totalPrice: 0,
+        ));
+      },
+    );
   }
 
   void _onToggleSeat(

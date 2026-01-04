@@ -53,3 +53,17 @@ class CinemaError extends CinemaState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Schedule loaded (movies with their showtimes)
+class ScheduleLoaded extends CinemaState {
+  final Map<int, List<Showtime>> showtimesByMovie;
+  final DateTime date;
+
+  const ScheduleLoaded({
+    required this.showtimesByMovie,
+    required this.date,
+  });
+
+  @override
+  List<Object?> get props => [showtimesByMovie, date];
+}

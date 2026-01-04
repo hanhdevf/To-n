@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:galaxymob/core/error/failures.dart';
 import 'package:galaxymob/features/booking/domain/entities/ticket.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
+import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 import 'package:galaxymob/features/booking/domain/repositories/ticket_service.dart';
 
 /// Ticket service implementation using Hive for local storage
@@ -75,6 +76,18 @@ class TicketServiceImpl implements TicketService {
           'createdAt': ticket.booking.createdAt.toIso8601String(),
           'formattedSeats': ticket.booking.formattedSeats,
           'ticketCount': ticket.booking.ticketCount,
+          'selectedSeats': ticket.booking.selectedSeats
+              .map(
+                (s) => {
+                  'id': s.id,
+                  'row': s.row,
+                  'number': s.number,
+                  'type': s.type.toString(),
+                  'status': s.status.toString(),
+                  'price': s.price,
+                },
+              )
+              .toList(),
         },
       };
 
@@ -150,7 +163,10 @@ class TicketServiceImpl implements TicketService {
       cinemaName: bookingMap['cinemaName'],
       showtimeId: bookingMap['showtimeId'],
       showtime: DateTime.parse(bookingMap['showtime']),
-      selectedSeats: [], // Simplified - seats not reconstructed
+      selectedSeats: _reconstructSeats(
+        bookingMap['selectedSeats'] as List?,
+        bookingMap['formattedSeats'] as String?,
+      ),
       totalPrice: bookingMap['totalPrice'],
       userName: bookingMap['userName'],
       userEmail: bookingMap['userEmail'],
@@ -186,5 +202,56 @@ class TicketServiceImpl implements TicketService {
       (e) => e.toString() == method,
       orElse: () => PaymentMethod.creditCard,
     );
+  }
+
+  SeatType _parseSeatType(String type) {
+    return SeatType.values.firstWhere(
+      (e) => e.toString() == type,
+      orElse: () => SeatType.regular,
+    );
+  }
+
+  SeatStatus _parseSeatStatus(String status) {
+    return SeatStatus.values.firstWhere(
+      (e) => e.toString() == status,
+      orElse: () => SeatStatus.booked,
+    );
+  }
+
+  List<Seat> _reconstructSeats(List? seatsList, String? formattedSeats) {
+    // 1. Try to use the full list if available (New Data)
+    if (seatsList != null && seatsList.isNotEmpty) {
+      return seatsList.map((s) {
+        final seatMap = s as Map;
+        return Seat(
+          id: seatMap['id'],
+          row: seatMap['row'],
+          number: seatMap['number'],
+          type: _parseSeatType(seatMap['type']),
+          status: _parseSeatStatus(seatMap['status']),
+          price: seatMap['price'],
+        );
+      }).toList();
+    }
+
+    // 2. Fallback: Parse from formatted string (Old Data) e.g., "H3, G3, G6"
+    if (formattedSeats != null && formattedSeats.isNotEmpty) {
+      final seatStrings = formattedSeats.split(', ');
+      return seatStrings.map((s) {
+        // Assume format "A1" or "A10"
+        final row = s.isNotEmpty ? s.substring(0, 1) : 'A';
+        final number = int.tryParse(s.substring(1)) ?? 0;
+        return Seat(
+          id: '$row$number', // Mock ID
+          row: row,
+          number: number,
+          type: SeatType.regular, // Default
+          status: SeatStatus.booked, // Default
+          price: 0, // Unknown
+        );
+      }).toList();
+    }
+
+    return [];
   }
 }

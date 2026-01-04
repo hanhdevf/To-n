@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:galaxymob/core/error/failures.dart';
 import 'package:galaxymob/features/movies/domain/entities/movie.dart';
+import 'package:galaxymob/features/movies/domain/entities/cast.dart';
+import 'package:galaxymob/features/movies/domain/entities/review.dart';
 
 /// Repository interface for movie operations
 abstract class MovieRepository {
@@ -27,4 +29,18 @@ abstract class MovieRepository {
     required String query,
     int page = 1,
   });
+
+  /// Discover movies with filters
+  Future<Either<Failure, List<Movie>>> discoverMovies({
+    int page = 1,
+    String? withGenres,
+    int? year,
+    String? sortBy,
+  });
+
+  /// Get movie credits (cast)
+  Future<Either<Failure, List<Cast>>> getMovieCredits(int movieId);
+
+  /// Get movie reviews
+  Future<Either<Failure, List<Review>>> getMovieReviews(int movieId);
 }

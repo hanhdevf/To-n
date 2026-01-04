@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
-import 'package:galaxymob/features/booking/domain/entities/ticket.dart';
 import 'package:galaxymob/features/booking/domain/entities/seat.dart';
+import 'package:galaxymob/features/booking/domain/entities/ticket.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_event.dart';
+import 'package:galaxymob/features/booking/presentation/widgets/ticket/ticket_action_button.dart';
+import 'package:galaxymob/features/booking/presentation/widgets/ticket/ticket_qr_card.dart';
+import 'package:galaxymob/features/booking/presentation/widgets/ticket/ticket_success_header.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Ticket display page showing QR code and booking details
 class TicketPage extends StatefulWidget {
@@ -54,26 +55,19 @@ class _TicketPageState extends State<TicketPage>
   @override
   void initState() {
     super.initState();
-
-    // Create booking and ticket
     _createTicket();
-
-    // Animation for ticket reveal
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.elasticOut,
     );
-
     _controller.forward();
   }
 
   void _createTicket() {
-    // Create booking entity
     final booking = Booking(
       id: 'BOOK-${const Uuid().v4().substring(0, 8).toUpperCase()}',
       movieId: 'unknown',
@@ -102,10 +96,8 @@ class _TicketPageState extends State<TicketPage>
       createdAt: DateTime.now(),
     );
 
-    // Generate QR data
     final qrData = Ticket.generateQRData(booking);
 
-    // Create ticket
     _ticket = Ticket(
       id: 'TICKET-${const Uuid().v4().substring(0, 12).toUpperCase()}',
       booking: booking,
@@ -114,7 +106,6 @@ class _TicketPageState extends State<TicketPage>
       expiresAt: booking.showtime.add(const Duration(minutes: 30)),
     );
 
-    // Save ticket to local storage
     context.read<TicketBloc>().add(GenerateTicketEvent(booking));
   }
 
@@ -134,7 +125,7 @@ class _TicketPageState extends State<TicketPage>
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.share),
+            icon: const Icon(Icons.share),
             onPressed: _shareTicket,
           ),
         ],
@@ -143,290 +134,26 @@ class _TicketPageState extends State<TicketPage>
         padding: EdgeInsets.all(AppDimens.spacing16),
         child: Column(
           children: [
-            // Small success indicator
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_circle, color: AppColors.success, size: 28),
-                SizedBox(width: AppDimens.spacing8),
-                Text('Booking Confirmed', style: AppTextStyles.h3),
-              ],
-            ),
+            const TicketSuccessHeader(),
             SizedBox(height: AppDimens.spacing16),
             ScaleTransition(
               scale: _scaleAnimation,
-              child: _buildTicketCard(),
+              child: TicketQrCard(
+                ticket: _ticket,
+                movieTitle: widget.movieTitle,
+                cinemaName: widget.cinemaName,
+                showtime: widget.showtime,
+                selectedSeats: widget.selectedSeats,
+                userName: widget.userName,
+                paymentMethod: widget.paymentMethod,
+                totalPrice: widget.totalPrice,
+              ),
             ),
             SizedBox(height: AppDimens.spacing16),
-            _buildActionButtons(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTicketCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLarge),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Top section with movie info
-          Container(
-            padding: EdgeInsets.all(AppDimens.spacing24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary,
-                  AppColors.primary.withValues(alpha: 0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(AppDimens.radiusLarge),
-                topRight: Radius.circular(AppDimens.radiusLarge),
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  widget.movieTitle,
-                  style: AppTextStyles.h2.copyWith(color: Colors.white),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: AppDimens.spacing8),
-                Text(
-                  'E-Ticket',
-                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-
-          // Perforation effect
-          _buildPerforation(),
-
-          // Ticket details
-          Padding(
-            padding: EdgeInsets.all(AppDimens.spacing16),
-            child: Column(
-              children: [
-                _buildQRCode(),
-                SizedBox(height: AppDimens.spacing16),
-                _buildTicketInfo(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerforation() {
-    return Row(
-      children: List.generate(
-        20,
-        (index) => Expanded(
-          child: Container(
-            height: 2,
-            color: index.isEven ? AppColors.surface : AppColors.background,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQRCode() {
-    return Container(
-      padding: EdgeInsets.all(AppDimens.spacing12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-        border: Border.all(color: AppColors.primary, width: 2),
-      ),
-      child: QrImageView(
-        data: _ticket.qrData,
-        version: QrVersions.auto,
-        size: 160,
-        backgroundColor: Colors.white,
-        eyeStyle: QrEyeStyle(
-          eyeShape: QrEyeShape.square,
-          color: AppColors.primary,
-        ),
-        dataModuleStyle: QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: Colors.black,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTicketInfo() {
-    final formatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
-    );
-
-    return Column(
-      children: [
-        // Booking ID (prominent)
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimens.spacing12,
-            vertical: AppDimens.spacing8,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Booking ID', style: AppTextStyles.caption),
-              Text(
-                _ticket.booking.id,
-                style: AppTextStyles.body2.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: AppDimens.spacing12),
-
-        // 2-column info grid
-        Row(
-          children: [
-            Expanded(
-              child: _buildCompactInfoItem(
-                Icons.location_on,
-                'Cinema',
-                widget.cinemaName,
-              ),
-            ),
-            SizedBox(width: AppDimens.spacing8),
-            Expanded(
-              child: _buildCompactInfoItem(
-                Icons.access_time,
-                'Time',
-                widget.showtime,
-              ),
+            TicketActionButton(
+              onPressed: () => context.go('/home'),
             ),
           ],
-        ),
-
-        SizedBox(height: AppDimens.spacing8),
-
-        Row(
-          children: [
-            Expanded(
-              child: _buildCompactInfoItem(
-                Icons.event_seat,
-                'Seats',
-                widget.selectedSeats.join(', '),
-              ),
-            ),
-            SizedBox(width: AppDimens.spacing8),
-            Expanded(
-              child: _buildCompactInfoItem(
-                Icons.person,
-                'Name',
-                widget.userName,
-              ),
-            ),
-          ],
-        ),
-
-        Divider(height: 24, color: Colors.white24),
-
-        // Total (prominent)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Total Paid', style: AppTextStyles.body2),
-                SizedBox(height: 2),
-                Text(
-                  'via ${widget.paymentMethod.displayName}',
-                  style: AppTextStyles.caption,
-                ),
-              ],
-            ),
-            Text(
-              formatter.format(widget.totalPrice),
-              style: AppTextStyles.h3.copyWith(color: AppColors.primary),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCompactInfoItem(IconData icon, String label, String value) {
-    return Container(
-      padding: EdgeInsets.all(AppDimens.spacing8),
-      decoration: BoxDecoration(
-        color: AppColors.background.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: AppColors.textSecondary),
-              SizedBox(width: 4),
-              Text(
-                label,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTextStyles.body2.copyWith(fontWeight: FontWeight.w600),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          context.go('/home'); // Go to home
-        },
-        icon: Icon(Icons.home),
-        label: Text('Back to Home'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.all(AppDimens.spacing16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
-          ),
         ),
       ),
     );

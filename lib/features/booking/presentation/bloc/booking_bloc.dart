@@ -1,13 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:galaxymob/features/booking/data/datasources/mock_booking_data_source.dart';
+import 'package:galaxymob/features/booking/domain/usecases/cancel_booking.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_user_bookings.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_state.dart';
 
 /// BLoC for managing user bookings
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
-  final MockBookingDataSource dataSource;
+  final GetUserBookings getUserBookings;
+  final CancelBooking cancelBooking;
 
-  BookingBloc({required this.dataSource}) : super(const BookingInitial()) {
+  BookingBloc({
+    required this.getUserBookings,
+    required this.cancelBooking,
+  }) : super(const BookingInitial()) {
     on<LoadBookingsEvent>(_onLoadBookings);
     on<CancelBookingEvent>(_onCancelBooking);
     on<RefreshBookingsEvent>(_onRefreshBookings);
@@ -19,12 +24,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   ) async {
     emit(const BookingLoading());
 
-    try {
-      final bookings = await dataSource.getUserBookings(event.userId);
-      emit(BookingsLoaded(bookings));
-    } catch (e) {
-      emit(BookingError(e.toString()));
-    }
+    final result = await getUserBookings(UserIdParams(userId: event.userId));
+
+    result.fold(
+      (failure) => emit(BookingError(failure.message)),
+      (bookings) => emit(BookingsLoaded(bookings)),
+    );
   }
 
   Future<void> _onCancelBooking(
@@ -35,32 +40,38 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
     final currentState = state as BookingsLoaded;
 
-    try {
-      final success = await dataSource.cancelBooking(event.bookingId);
+    final result = await cancelBooking(
+      BookingIdParams(bookingId: event.bookingId),
+    );
 
-      if (success) {
-        // Reload bookings
-        final bookings = await dataSource.getUserBookings('current-user');
-        emit(BookingsLoaded(bookings));
-      } else {
-        emit(const BookingError('Failed to cancel booking'));
+    await result.fold(
+      (failure) async {
+        emit(BookingError(failure.message));
         emit(currentState); // Restore previous state
-      }
-    } catch (e) {
-      emit(BookingError(e.toString()));
-      emit(currentState); // Restore previous state
-    }
+      },
+      (_) async {
+        // Reload bookings after successful cancellation
+        final bookingsResult = await getUserBookings(
+          const UserIdParams(userId: 'current-user'),
+        );
+
+        bookingsResult.fold(
+          (failure) => emit(BookingError(failure.message)),
+          (bookings) => emit(BookingsLoaded(bookings)),
+        );
+      },
+    );
   }
 
   Future<void> _onRefreshBookings(
     RefreshBookingsEvent event,
     Emitter<BookingState> emit,
   ) async {
-    try {
-      final bookings = await dataSource.getUserBookings(event.userId);
-      emit(BookingsLoaded(bookings));
-    } catch (e) {
-      emit(BookingError(e.toString()));
-    }
+    final result = await getUserBookings(UserIdParams(userId: event.userId));
+
+    result.fold(
+      (failure) => emit(BookingError(failure.message)),
+      (bookings) => emit(BookingsLoaded(bookings)),
+    );
   }
 }

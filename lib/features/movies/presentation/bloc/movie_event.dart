@@ -42,14 +42,20 @@ class LoadUpcomingEvent extends MovieEvent {
 class SearchMoviesEvent extends MovieEvent {
   final String query;
   final int page;
+  final int? genreId;
+  final int? year;
+  final String? sortBy;
 
   const SearchMoviesEvent({
     required this.query,
     this.page = 1,
+    this.genreId,
+    this.year,
+    this.sortBy,
   });
 
   @override
-  List<Object?> get props => [query, page];
+  List<Object?> get props => [query, page, genreId, year, sortBy];
 }
 
 /// Load trending movies

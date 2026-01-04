@@ -10,6 +10,7 @@ class MovieCard extends StatelessWidget {
   final String? posterPath;
   final double? rating;
   final String? genre;
+  final String? releaseDate;
   final VoidCallback? onTap;
 
   const MovieCard({
@@ -18,11 +19,18 @@ class MovieCard extends StatelessWidget {
     this.posterPath,
     this.rating,
     this.genre,
+    this.releaseDate,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Extract year
+    String? year;
+    if (releaseDate != null && releaseDate!.length >= 4) {
+      year = releaseDate!.substring(0, 4);
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -46,17 +54,15 @@ class MovieCard extends StatelessWidget {
                 CachedNetworkImage(
                   imageUrl: posterPath!,
                   width: AppDimens.movieCardWidth,
-                  height: AppDimens.movieCardHeight,
+                  height: double.infinity,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     width: AppDimens.movieCardWidth,
-                    height: AppDimens.movieCardHeight,
                     color: AppColors.surface,
                     child: const Center(child: CircularProgressIndicator()),
                   ),
                   errorWidget: (context, url, error) => Container(
                     width: AppDimens.movieCardWidth,
-                    height: AppDimens.movieCardHeight,
                     color: AppColors.surface,
                     child: const Icon(
                       Icons.movie_outlined,
@@ -68,7 +74,6 @@ class MovieCard extends StatelessWidget {
               else
                 Container(
                   width: AppDimens.movieCardWidth,
-                  height: AppDimens.movieCardHeight,
                   color: AppColors.surface,
                   child: const Icon(
                     Icons.movie_outlined,
@@ -83,7 +88,7 @@ class MovieCard extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Container(
-                  height: 80,
+                  height: 120, // Increased height for more content
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -108,6 +113,30 @@ class MovieCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Genre badge (if available)
+                      if (genre != null && genre!.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.only(bottom: AppDimens.spacing8),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            genre!
+                                .toUpperCase()
+                                .split(', ')[0], // First genre only
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+
                       Text(
                         title,
                         style: AppTextStyles.body2Medium.copyWith(
@@ -135,27 +164,15 @@ class MovieCard extends StatelessWidget {
                               ),
                             ),
                           ],
-                          if (genre != null && rating != null) ...[
+                          if (year != null) ...[
                             SizedBox(width: AppDimens.spacing8),
                             Text(
-                              '•',
+                              year,
                               style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textTertiary,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                            SizedBox(width: AppDimens.spacing8),
                           ],
-                          if (genre != null)
-                            Expanded(
-                              child: Text(
-                                genre!,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.textTertiary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
                         ],
                       ),
                     ],

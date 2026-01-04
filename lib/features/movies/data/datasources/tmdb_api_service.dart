@@ -4,6 +4,8 @@ import 'package:galaxymob/config/constants/api_constants.dart';
 import 'package:galaxymob/features/movies/data/models/movie_response_model.dart';
 import 'package:galaxymob/features/movies/data/models/genre_response_model.dart';
 import 'package:galaxymob/features/movies/data/models/movie_model.dart';
+import 'package:galaxymob/features/movies/data/models/credit_model.dart';
+import 'package:galaxymob/features/movies/data/models/review_model.dart';
 
 part 'tmdb_api_service.g.dart';
 
@@ -65,5 +67,28 @@ abstract class TmdbApiService {
     @Query('query') required String query,
     @Query('language') String language = 'en-US',
     @Query('page') int page = 1,
+  });
+  @GET('/movie/{movie_id}/credits')
+  Future<HttpResponse<CreditsResponseModel>> getMovieCredits({
+    @Path('movie_id') required int movieId,
+    @Query('api_key') String apiKey = TmdbApiConstants.apiKey,
+    @Query('language') String language = 'en-US',
+  });
+
+  @GET('/movie/{movie_id}/reviews')
+  Future<HttpResponse<ReviewsResponseModel>> getMovieReviews({
+    @Path('movie_id') required int movieId,
+    @Query('api_key') String apiKey = TmdbApiConstants.apiKey,
+    @Query('language') String language = 'en-US',
+    @Query('page') int page = 1,
+  });
+  @GET('/discover/movie')
+  Future<HttpResponse<MovieResponseModel>> discoverMovies({
+    @Query('api_key') String apiKey = TmdbApiConstants.apiKey,
+    @Query('language') String language = 'en-US',
+    @Query('page') int page = 1,
+    @Query('with_genres') String? withGenres,
+    @Query('primary_release_year') int? year,
+    @Query('sort_by') String? sortBy, // e.g. popularity.desc, vote_average.desc
   });
 }

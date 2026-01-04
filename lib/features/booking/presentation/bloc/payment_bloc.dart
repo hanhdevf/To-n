@@ -1,13 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:galaxymob/features/booking/domain/repositories/payment_service.dart';
+import 'package:galaxymob/features/booking/domain/usecases/initiate_payment.dart';
+import 'package:galaxymob/features/booking/domain/usecases/verify_payment.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_state.dart';
 
 /// BLoC for handling payment operations
 class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
-  final PaymentService paymentService;
+  final InitiatePayment initiatePayment;
+  final VerifyPayment verifyPayment;
 
-  PaymentBloc({required this.paymentService}) : super(const PaymentInitial()) {
+  PaymentBloc({
+    required this.initiatePayment,
+    required this.verifyPayment,
+  }) : super(const PaymentInitial()) {
     on<InitiatePaymentEvent>(_onInitiatePayment);
     on<VerifyPaymentEvent>(_onVerifyPayment);
     on<ResetPaymentEvent>(_onResetPayment);
@@ -19,9 +24,11 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   ) async {
     emit(const PaymentProcessing());
 
-    final result = await paymentService.initiatePayment(
-      booking: event.booking,
-      method: event.method,
+    final result = await initiatePayment(
+      PaymentParams(
+        booking: event.booking,
+        method: event.method,
+      ),
     );
 
     result.fold(
@@ -36,7 +43,9 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   ) async {
     emit(const PaymentProcessing());
 
-    final result = await paymentService.verifyPayment(event.transactionId);
+    final result = await verifyPayment(
+      TransactionIdParams(transactionId: event.transactionId),
+    );
 
     result.fold(
       (failure) => emit(PaymentFailed(failure.message)),

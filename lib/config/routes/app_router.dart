@@ -8,11 +8,15 @@ import 'package:galaxymob/features/auth/presentation/pages/login_page.dart';
 import 'package:galaxymob/features/auth/presentation/pages/register_page.dart';
 import 'package:galaxymob/features/auth/presentation/pages/profile_page.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_bloc.dart';
+import 'package:galaxymob/features/movies/presentation/bloc/movie_event.dart';
 import 'package:galaxymob/features/home/presentation/pages/home_page.dart';
 import 'package:galaxymob/features/movies/presentation/pages/movie_detail_page.dart';
+import 'package:galaxymob/features/movies/presentation/pages/movie_list_page.dart';
 import 'package:galaxymob/features/movies/presentation/pages/search_page.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_bloc.dart';
+import 'package:galaxymob/features/cinema/presentation/bloc/cinema_event.dart';
 import 'package:galaxymob/features/cinema/presentation/pages/showtime_selection_page.dart';
+import 'package:galaxymob/features/cinema/presentation/pages/schedule_view_page.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
@@ -24,6 +28,13 @@ import 'package:galaxymob/features/booking/presentation/pages/ticket_page.dart';
 import 'package:galaxymob/features/booking/presentation/pages/my_tickets_page.dart';
 import 'package:galaxymob/features/booking/presentation/pages/my_bookings_page.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
+import 'package:galaxymob/features/movies/presentation/pages/all_reviews_page.dart';
+import 'package:galaxymob/features/movies/domain/entities/review.dart';
+import 'package:galaxymob/features/booking/presentation/pages/ticket_detail_page.dart';
+import 'package:galaxymob/features/booking/domain/entities/ticket.dart';
+
+import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
+import 'package:galaxymob/features/movies/presentation/bloc/genre_event.dart';
 
 /// Application router configuration using go_router
 class AppRouter {
@@ -81,7 +92,18 @@ class AppRouter {
           GoRoute(
             path: '/search',
             name: 'search',
-            builder: (context, state) => const SearchPage(),
+            builder: (context, state) => MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => getIt<MovieBloc>(),
+                ),
+                BlocProvider(
+                  create: (context) =>
+                      getIt<GenreBloc>()..add(const LoadGenresEvent()),
+                ),
+              ],
+              child: const SearchPage(),
+            ),
           ),
           GoRoute(
             path: '/tickets',
@@ -117,6 +139,59 @@ class AppRouter {
         builder: (context, state) {
           final movieId = int.parse(state.pathParameters['id']!);
           return MovieDetailPage(movieId: movieId);
+        },
+      ),
+
+      // Movie List Route (for trending/upcoming views)
+      GoRoute(
+        path: '/movies/:category',
+        name: 'movieList',
+        builder: (context, state) {
+          final category = state.pathParameters['category']!;
+          final title = state.uri.queryParameters['title'] ?? 'Movies';
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => getIt<MovieBloc>()
+                  ..add(category == 'trending'
+                      ? const LoadTrendingEvent()
+                      : const LoadUpcomingEvent()),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    getIt<GenreBloc>()..add(const LoadGenresEvent()),
+              ),
+            ],
+            child: MovieListPage(
+              category: category,
+              title: title,
+            ),
+          );
+        },
+      ),
+
+      // Schedule View Route
+      GoRoute(
+        path: '/schedule',
+        name: 'schedule',
+        builder: (context, state) {
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => getIt<CinemaBloc>()
+                  ..add(LoadScheduleEvent(date: DateTime.now())),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    getIt<MovieBloc>()..add(const LoadNowPlayingEvent()),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    getIt<GenreBloc>()..add(const LoadGenresEvent()),
+              ),
+            ],
+            child: const ScheduleViewPage(),
+          );
         },
       ),
 
@@ -202,6 +277,33 @@ class AppRouter {
               paymentMethod: extra['paymentMethod'] as PaymentMethod,
             ),
           );
+        },
+      ),
+
+      // All Reviews Route
+      GoRoute(
+        path: '/all-reviews',
+        name: 'all_reviews',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>?;
+          if (extras == null ||
+              extras['reviews'] == null ||
+              extras['movieTitle'] == null) {
+            return const SizedBox.shrink(); // or another safe fallback
+          }
+          return AllReviewsPage(
+            reviews: extras['reviews'] as List<Review>,
+            movieTitle: extras['movieTitle'] as String,
+          );
+        },
+      ),
+      // Ticket Detail Route
+      GoRoute(
+        path: '/ticket-detail',
+        name: 'ticketDetail',
+        builder: (context, state) {
+          final ticket = state.extra as Ticket;
+          return TicketDetailPage(ticket: ticket);
         },
       ),
     ],

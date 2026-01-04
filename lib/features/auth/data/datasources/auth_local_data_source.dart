@@ -34,10 +34,7 @@ class AuthLocalDataSource {
     if (userJson == null) return null;
 
     final Map<String, dynamic> userMap = json.decode(userJson);
-    // Convert createdAt string back to DateTime if it exists
-    if (userMap['createdAt'] != null) {
-      userMap['createdAt'] = DateTime.parse(userMap['createdAt'] as String);
-    }
+    // Freezed will automatically handle DateTime parsing from String
     return UserModel.fromJson(userMap);
   }
 

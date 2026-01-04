@@ -9,6 +9,7 @@ class SectionHeader extends StatelessWidget {
   final String? actionText;
   final VoidCallback? onActionTap;
   final Widget? icon;
+  final EdgeInsetsGeometry? padding;
 
   const SectionHeader({
     super.key,
@@ -16,15 +17,17 @@ class SectionHeader extends StatelessWidget {
     this.actionText,
     this.onActionTap,
     this.icon,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppDimens.spacing16,
-        vertical: AppDimens.spacing8,
-      ),
+      padding: padding ??
+          EdgeInsets.symmetric(
+            horizontal: AppDimens.spacing16,
+            vertical: AppDimens.spacing8,
+          ),
       child: Row(
         children: [
           if (icon != null) ...[icon!, SizedBox(width: AppDimens.spacing8)],

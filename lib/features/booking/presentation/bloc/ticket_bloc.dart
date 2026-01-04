@@ -1,13 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:galaxymob/features/booking/domain/repositories/ticket_service.dart';
+import 'package:galaxymob/core/usecase/usecase.dart';
+import 'package:galaxymob/features/booking/domain/usecases/delete_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/generate_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_user_tickets.dart';
+import 'package:galaxymob/features/booking/domain/usecases/save_ticket.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_state.dart';
 
 /// BLoC for managing user tickets
 class TicketBloc extends Bloc<TicketEvent, TicketState> {
-  final TicketService ticketService;
+  final GetUserTickets getUserTickets;
+  final GenerateTicket generateTicket;
+  final SaveTicket saveTicket;
+  final DeleteTicket deleteTicket;
 
-  TicketBloc({required this.ticketService}) : super(const TicketInitial()) {
+  TicketBloc({
+    required this.getUserTickets,
+    required this.generateTicket,
+    required this.saveTicket,
+    required this.deleteTicket,
+  }) : super(const TicketInitial()) {
     on<LoadTicketsEvent>(_onLoadTickets);
     on<GenerateTicketEvent>(_onGenerateTicket);
     on<DeleteTicketEvent>(_onDeleteTicket);
@@ -20,7 +32,7 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
   ) async {
     emit(const TicketsLoading());
 
-    final result = await ticketService.getUserTickets();
+    final result = await getUserTickets(NoParams());
 
     result.fold(
       (failure) => emit(TicketError(failure.message)),
@@ -47,13 +59,15 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
     emit(const TicketsLoading());
 
     // Generate ticket
-    final ticketResult = await ticketService.generateTicket(event.booking);
+    final ticketResult = await generateTicket(
+      BookingParams(booking: event.booking),
+    );
 
     await ticketResult.fold(
       (failure) async => emit(TicketError(failure.message)),
       (ticket) async {
         // Save ticket
-        final saveResult = await ticketService.saveTicket(ticket);
+        final saveResult = await saveTicket(TicketParams(ticket: ticket));
 
         saveResult.fold(
           (failure) => emit(TicketError(failure.message)),
@@ -67,7 +81,9 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
     DeleteTicketEvent event,
     Emitter<TicketState> emit,
   ) async {
-    final result = await ticketService.deleteTicket(event.ticketId);
+    final result = await deleteTicket(
+      TicketIdParams(ticketId: event.ticketId),
+    );
 
     result.fold(
       (failure) => emit(TicketError(failure.message)),

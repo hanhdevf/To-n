@@ -23,6 +23,8 @@ import 'package:galaxymob/features/movies/domain/usecases/get_popular_movies.dar
 import 'package:galaxymob/features/movies/domain/usecases/get_upcoming_movies.dart';
 import 'package:galaxymob/features/movies/domain/usecases/get_trending_movies.dart';
 import 'package:galaxymob/features/movies/domain/usecases/search_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_movie_credits.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_movie_reviews.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_bloc.dart';
 import 'package:galaxymob/features/movies/data/repositories/genre_repository_impl.dart';
 import 'package:galaxymob/features/movies/domain/repositories/genre_repository.dart';
@@ -38,8 +40,21 @@ import 'package:galaxymob/features/booking/data/datasources/mock_seat_data_sourc
 import 'package:galaxymob/features/booking/data/datasources/mock_booking_data_source.dart';
 import 'package:galaxymob/features/booking/data/repositories/mock_payment_service.dart';
 import 'package:galaxymob/features/booking/data/repositories/ticket_service_impl.dart';
+import 'package:galaxymob/features/booking/data/repositories/booking_repository_impl.dart';
+import 'package:galaxymob/features/booking/data/repositories/seat_repository_impl.dart';
 import 'package:galaxymob/features/booking/domain/repositories/payment_service.dart';
 import 'package:galaxymob/features/booking/domain/repositories/ticket_service.dart';
+import 'package:galaxymob/features/booking/domain/repositories/booking_repository.dart';
+import 'package:galaxymob/features/booking/domain/repositories/seat_repository.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_user_bookings.dart';
+import 'package:galaxymob/features/booking/domain/usecases/cancel_booking.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_user_tickets.dart';
+import 'package:galaxymob/features/booking/domain/usecases/generate_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/save_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/delete_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/get_seat_layout.dart';
+import 'package:galaxymob/features/booking/domain/usecases/initiate_payment.dart';
+import 'package:galaxymob/features/booking/domain/usecases/verify_payment.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
@@ -97,7 +112,10 @@ Future<void> configureDependencies() async {
     () => TmdbApiService(dio),
   );
   getIt.registerLazySingleton<MovieRemoteDataSource>(
-    () => MovieRemoteDataSource(getIt<TmdbApiService>()),
+    () => MovieRemoteDataSource(
+      getIt<TmdbApiService>(),
+      getIt<NetworkInfo>(),
+    ),
   );
 
   // Movie repository
@@ -124,6 +142,8 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => SearchMovies(getIt<MovieRepository>()));
   getIt
       .registerLazySingleton(() => GetTrendingMovies(getIt<MovieRepository>()));
+  getIt.registerLazySingleton(() => GetMovieCredits(getIt<MovieRepository>()));
+  getIt.registerLazySingleton(() => GetMovieReviews(getIt<MovieRepository>()));
 
   // Genre use cases
   getIt.registerLazySingleton(() => GetGenres(getIt<GenreRepository>()));
@@ -137,6 +157,8 @@ Future<void> configureDependencies() async {
       getTrendingMovies: getIt<GetTrendingMovies>(),
       getMovieDetails: getIt<GetMovieDetails>(),
       searchMovies: getIt<SearchMovies>(),
+      getMovieCredits: getIt<GetMovieCredits>(),
+      getMovieReviews: getIt<GetMovieReviews>(),
     ),
   );
 
@@ -191,28 +213,58 @@ Future<void> configureDependencies() async {
     () => TicketServiceImpl(),
   );
 
+  // Booking repositories
+  getIt.registerLazySingleton<BookingRepository>(
+    () => BookingRepositoryImpl(
+      dataSource: getIt<MockBookingDataSource>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<SeatRepository>(
+    () => SeatRepositoryImpl(
+      dataSource: getIt<MockSeatDataSource>(),
+    ),
+  );
+
+  // Booking UseCases
+  getIt
+      .registerLazySingleton(() => GetUserBookings(getIt<BookingRepository>()));
+  getIt.registerLazySingleton(() => CancelBooking(getIt<BookingRepository>()));
+  getIt.registerLazySingleton(() => GetUserTickets(getIt<TicketService>()));
+  getIt.registerLazySingleton(() => GenerateTicket(getIt<TicketService>()));
+  getIt.registerLazySingleton(() => SaveTicket(getIt<TicketService>()));
+  getIt.registerLazySingleton(() => DeleteTicket(getIt<TicketService>()));
+  getIt.registerLazySingleton(() => GetSeatLayout(getIt<SeatRepository>()));
+  getIt.registerLazySingleton(() => InitiatePayment(getIt<PaymentService>()));
+  getIt.registerLazySingleton(() => VerifyPayment(getIt<PaymentService>()));
+
   // Booking BLoCs
   getIt.registerFactory(
     () => SeatBloc(
-      dataSource: getIt<MockSeatDataSource>(),
+      getSeatLayout: getIt<GetSeatLayout>(),
     ),
   );
 
   getIt.registerFactory(
     () => PaymentBloc(
-      paymentService: getIt<PaymentService>(),
+      initiatePayment: getIt<InitiatePayment>(),
+      verifyPayment: getIt<VerifyPayment>(),
     ),
   );
 
   getIt.registerFactory(
     () => TicketBloc(
-      ticketService: getIt<TicketService>(),
+      getUserTickets: getIt<GetUserTickets>(),
+      generateTicket: getIt<GenerateTicket>(),
+      saveTicket: getIt<SaveTicket>(),
+      deleteTicket: getIt<DeleteTicket>(),
     ),
   );
 
   getIt.registerFactory(
     () => BookingBloc(
-      dataSource: getIt<MockBookingDataSource>(),
+      getUserBookings: getIt<GetUserBookings>(),
+      cancelBooking: getIt<CancelBooking>(),
     ),
   );
 }

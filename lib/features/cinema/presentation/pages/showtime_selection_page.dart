@@ -9,6 +9,8 @@ import 'package:galaxymob/core/widgets/widgets.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_bloc.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_event.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_state.dart';
+import 'package:galaxymob/features/cinema/domain/entities/cinema.dart';
+import 'package:galaxymob/features/cinema/domain/entities/showtime.dart';
 
 /// Showtime selection page for choosing cinema and time
 class ShowtimeSelectionPage extends StatefulWidget {
@@ -204,14 +206,38 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
         final cinema = state.cinemas[index];
         final showtimes = state.showtimesByCinema[cinema.id] ?? [];
 
-        return _buildCinemaCard(cinema, showtimes);
+        return _CinemaExpandableCard(
+          cinema: cinema,
+          showtimes: showtimes,
+          movieTitle: widget.movieTitle,
+        );
       },
     );
   }
+}
 
-  Widget _buildCinemaCard(cinema, List showtimes) {
+class _CinemaExpandableCard extends StatefulWidget {
+  final Cinema cinema;
+  final List<Showtime> showtimes;
+  final String movieTitle;
+
+  const _CinemaExpandableCard({
+    required this.cinema,
+    required this.showtimes,
+    required this.movieTitle,
+  });
+
+  @override
+  State<_CinemaExpandableCard> createState() => _CinemaExpandableCardState();
+}
+
+class _CinemaExpandableCardState extends State<_CinemaExpandableCard>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppDimens.spacing16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
@@ -219,49 +245,118 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cinema name
-          Text(
-            cinema.name,
-            style: AppTextStyles.h3,
-          ),
-          SizedBox(height: AppDimens.spacing4),
+          // Header (Clickable)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(AppDimens.radiusMedium),
+              topRight: Radius.circular(AppDimens.radiusMedium),
+              bottomLeft: _isExpanded
+                  ? Radius.zero
+                  : Radius.circular(AppDimens.radiusMedium),
+              bottomRight: _isExpanded
+                  ? Radius.zero
+                  : Radius.circular(AppDimens.radiusMedium),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(AppDimens.spacing16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Cinema name
+                        Text(
+                          widget.cinema.name,
+                          style: AppTextStyles.h3,
+                        ),
+                        SizedBox(height: AppDimens.spacing4),
 
-          // Address
-          Row(
-            children: [
-              Icon(
-                Icons.location_on,
-                size: 16,
-                color: AppColors.textSecondary,
+                        // Address
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(width: AppDimens.spacing4),
+                            Expanded(
+                              child: Text(
+                                widget.cinema.address,
+                                style: AppTextStyles.caption,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: AppColors.textSecondary,
+                  ),
+                ],
               ),
-              SizedBox(width: AppDimens.spacing4),
-              Expanded(
-                child: Text(
-                  cinema.address,
-                  style: AppTextStyles.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ),
 
-          SizedBox(height: AppDimens.spacing16),
-
-          // Showtimes
-          Wrap(
-            spacing: AppDimens.spacing8,
-            runSpacing: AppDimens.spacing8,
-            children: showtimes.map<Widget>((showtime) {
-              return _buildShowtimeChip(showtime);
-            }).toList(),
+          // Collapsible Body
+          AnimatedCrossFade(
+            firstChild: Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(
+                AppDimens.spacing16,
+                0,
+                AppDimens.spacing16,
+                AppDimens.spacing16,
+              ),
+              child: Wrap(
+                spacing: AppDimens.spacing8,
+                runSpacing: AppDimens.spacing8,
+                children: widget.showtimes.map<Widget>((showtime) {
+                  return _ShowtimeChip(
+                    showtime: showtime,
+                    movieTitle: widget.movieTitle,
+                    cinemaName: widget.cinema.name,
+                  );
+                }).toList(),
+              ),
+            ),
+            secondChild: const SizedBox(width: double.infinity),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            duration: const Duration(milliseconds: 300),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildShowtimeChip(showtime) {
+class _ShowtimeChip extends StatelessWidget {
+  final Showtime showtime;
+  final String movieTitle;
+  final String cinemaName;
+
+  const _ShowtimeChip({
+    required this.showtime,
+    required this.movieTitle,
+    required this.cinemaName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(
       locale: 'vi_VN',
       symbol: '₫',
@@ -275,8 +370,8 @@ class _ShowtimeSelectionPageState extends State<ShowtimeSelectionPage> {
           '/booking/seats',
           extra: {
             'showtimeId': showtime.id,
-            'movieTitle': widget.movieTitle,
-            'cinemaName': showtime.cinemaId, // We'll need cinema object later
+            'movieTitle': movieTitle,
+            'cinemaName': cinemaName,
             'showtime': showtime.formattedTime,
             'basePrice': showtime.price,
           },

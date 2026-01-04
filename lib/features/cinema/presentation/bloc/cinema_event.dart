@@ -35,3 +35,15 @@ class LoadShowtimesEvent extends CinemaEvent {
   @override
   List<Object?> get props => [movieId, date];
 }
+
+/// Load schedule for all movies on a specific date
+class LoadScheduleEvent extends CinemaEvent {
+  final DateTime date;
+
+  const LoadScheduleEvent({
+    required this.date,
+  });
+
+  @override
+  List<Object?> get props => [date];
+}

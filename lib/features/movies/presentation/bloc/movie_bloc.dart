@@ -1,14 +1,20 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:galaxymob/core/error/failures.dart';
+import 'package:galaxymob/features/movies/domain/entities/cast.dart';
+import 'package:galaxymob/features/movies/domain/entities/review.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_movie_credits.dart';
 import 'package:galaxymob/features/movies/domain/usecases/get_movie_details.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_movie_reviews.dart';
 import 'package:galaxymob/features/movies/domain/usecases/get_now_playing_movies.dart';
 import 'package:galaxymob/features/movies/domain/usecases/get_popular_movies.dart';
-import 'package:galaxymob/features/movies/domain/usecases/get_upcoming_movies.dart';
 import 'package:galaxymob/features/movies/domain/usecases/get_trending_movies.dart';
+import 'package:galaxymob/features/movies/domain/usecases/get_upcoming_movies.dart';
 import 'package:galaxymob/features/movies/domain/usecases/search_movies.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_event.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_state.dart';
 
-/// BLoC for handling movie logic
+/// BLoC for handling movie logic with slice-based loading
 class MovieBloc extends Bloc<MovieEvent, MovieState> {
   final GetNowPlayingMovies getNowPlayingMovies;
   final GetPopularMovies getPopularMovies;
@@ -16,6 +22,8 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
   final GetTrendingMovies getTrendingMovies;
   final GetMovieDetails getMovieDetails;
   final SearchMovies searchMovies;
+  final GetMovieCredits getMovieCredits;
+  final GetMovieReviews getMovieReviews;
 
   MovieBloc({
     required this.getNowPlayingMovies,
@@ -24,7 +32,9 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     required this.getTrendingMovies,
     required this.getMovieDetails,
     required this.searchMovies,
-  }) : super(const MovieInitial()) {
+    required this.getMovieCredits,
+    required this.getMovieReviews,
+  }) : super(const MovieState()) {
     on<LoadNowPlayingEvent>(_onLoadNowPlaying);
     on<LoadPopularEvent>(_onLoadPopular);
     on<LoadUpcomingEvent>(_onLoadUpcoming);
@@ -37,13 +47,28 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     LoadNowPlayingEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
+    emit(state.copyWith(
+      nowPlaying: state.nowPlaying.toLoading(),
+    ));
 
     final result = await getNowPlayingMovies(MovieParams(page: event.page));
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movies) => emit(NowPlayingLoaded(movies)),
+    emit(
+      result.fold(
+        (failure) => state.copyWith(
+          nowPlaying: state.nowPlaying.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+        (movies) => state.copyWith(
+          nowPlaying: state.nowPlaying.copyWith(
+            status: LoadStatus.success,
+            movies: movies,
+            error: null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -51,13 +76,28 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     LoadPopularEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
+    emit(state.copyWith(
+      popular: state.popular.toLoading(),
+    ));
 
     final result = await getPopularMovies(MovieParams(page: event.page));
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movies) => emit(PopularLoaded(movies)),
+    emit(
+      result.fold(
+        (failure) => state.copyWith(
+          popular: state.popular.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+        (movies) => state.copyWith(
+          popular: state.popular.copyWith(
+            status: LoadStatus.success,
+            movies: movies,
+            error: null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -65,13 +105,28 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     LoadUpcomingEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
+    emit(state.copyWith(
+      upcoming: state.upcoming.toLoading(),
+    ));
 
     final result = await getUpcomingMovies(MovieParams(page: event.page));
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movies) => emit(UpcomingLoaded(movies)),
+    emit(
+      result.fold(
+        (failure) => state.copyWith(
+          upcoming: state.upcoming.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+        (movies) => state.copyWith(
+          upcoming: state.upcoming.copyWith(
+            status: LoadStatus.success,
+            movies: movies,
+            error: null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -79,15 +134,60 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     LoadMovieDetailEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
+    emit(
+      state.copyWith(
+        detail: state.detail.copyWith(
+          status: LoadStatus.loading,
+          error: null,
+        ),
+      ),
+    );
 
     final result = await getMovieDetails(
       MovieDetailParams(movieId: event.movieId),
     );
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movie) => emit(MovieDetailLoaded(movie)),
+    await result.fold(
+      (failure) async => emit(
+        state.copyWith(
+          detail: state.detail.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+      ),
+      (movie) async {
+        // Fetch credits and reviews in parallel
+        final results = await Future.wait([
+          getMovieCredits(MovieCreditsParams(movieId: event.movieId)),
+          getMovieReviews(MovieReviewsParams(movieId: event.movieId)),
+        ]);
+
+        final creditsResult = results[0] as Either<Failure, List<Cast>>;
+        final reviewsResult = results[1] as Either<Failure, List<Review>>;
+
+        final cast = creditsResult.fold(
+          (failure) => <Cast>[],
+          (data) => data,
+        );
+
+        final reviews = reviewsResult.fold(
+          (failure) => <Review>[],
+          (data) => data,
+        );
+
+        emit(
+          state.copyWith(
+            detail: state.detail.copyWith(
+              status: LoadStatus.success,
+              movie: movie,
+              cast: cast,
+              reviews: reviews,
+              error: null,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -95,15 +195,42 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     SearchMoviesEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
-
-    final result = await searchMovies(
-      SearchParams(query: event.query, page: event.page),
+    emit(
+      state.copyWith(
+        search: state.search.copyWith(
+          status: LoadStatus.loading,
+          query: event.query,
+          error: null,
+        ),
+      ),
     );
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movies) => emit(SearchResultsLoaded(movies, event.query)),
+    final result = await searchMovies(
+      SearchParams(
+        query: event.query,
+        page: event.page,
+        genreId: event.genreId,
+        year: event.year,
+        sortBy: event.sortBy,
+      ),
+    );
+
+    emit(
+      result.fold(
+        (failure) => state.copyWith(
+          search: state.search.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+        (movies) => state.copyWith(
+          search: state.search.copyWith(
+            status: LoadStatus.success,
+            results: movies,
+            error: null,
+          ),
+        ),
+      ),
     );
   }
 
@@ -111,13 +238,28 @@ class MovieBloc extends Bloc<MovieEvent, MovieState> {
     LoadTrendingEvent event,
     Emitter<MovieState> emit,
   ) async {
-    emit(const MovieLoading());
+    emit(state.copyWith(
+      trending: state.trending.toLoading(),
+    ));
 
     final result = await getTrendingMovies(MovieParams(page: event.page));
 
-    result.fold(
-      (failure) => emit(MovieError(failure.message)),
-      (movies) => emit(TrendingLoaded(movies)),
+    emit(
+      result.fold(
+        (failure) => state.copyWith(
+          trending: state.trending.copyWith(
+            status: LoadStatus.failure,
+            error: failure.message,
+          ),
+        ),
+        (movies) => state.copyWith(
+          trending: state.trending.copyWith(
+            status: LoadStatus.success,
+            movies: movies,
+            error: null,
+          ),
+        ),
+      ),
     );
   }
 }

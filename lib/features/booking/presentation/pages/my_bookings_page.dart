@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
@@ -10,6 +9,7 @@ import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_state.dart';
+import 'package:galaxymob/features/booking/presentation/widgets/bookings/booking_card.dart';
 
 /// My Bookings page showing active and past bookings
 class MyBookingsPage extends StatefulWidget {
@@ -123,222 +123,20 @@ class _MyBookingsPageState extends State<MyBookingsPage>
             SizedBox(height: AppDimens.spacing16),
         itemBuilder: (context, index) {
           final booking = bookings[index];
-          return _buildBookingCard(context, booking, isActive: isActive);
+          return BookingCard(
+            booking: booking,
+            isActive: isActive,
+            onCancel: () => _showCancelDialog(context, booking),
+            onViewTicket: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('View ticket - Coming soon!'),
+                ),
+              );
+            },
+          );
         },
       ),
-    );
-  }
-
-  Widget _buildBookingCard(
-    BuildContext context,
-    Booking booking, {
-    required bool isActive,
-  }) {
-    final dateFormatter = DateFormat('EEE, MMM d, yyyy');
-    final timeFormatter = DateFormat('HH:mm');
-    final priceFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
-    );
-
-    final isCancelled = booking.status == BookingStatus.cancelled;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
-        border: isCancelled
-            ? Border.all(color: AppColors.error.withValues(alpha: 0.3))
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with movie title and status
-          Container(
-            padding: EdgeInsets.all(AppDimens.spacing16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isCancelled
-                    ? [
-                        AppColors.error.withValues(alpha: 0.2),
-                        AppColors.error.withValues(alpha: 0.1),
-                      ]
-                    : [
-                        AppColors.primary.withValues(alpha: 0.2),
-                        AppColors.primary.withValues(alpha: 0.1),
-                      ],
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(AppDimens.radiusMedium),
-                topRight: Radius.circular(AppDimens.radiusMedium),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        booking.movieTitle,
-                        style: AppTextStyles.h3,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: AppDimens.spacing4),
-                      Text(
-                        'ID: ${booking.id}',
-                        style: AppTextStyles.caption.copyWith(
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isCancelled)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppDimens.spacing8,
-                      vertical: AppDimens.spacing4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius:
-                          BorderRadius.circular(AppDimens.radiusSmall),
-                    ),
-                    child: Text(
-                      'CANCELLED',
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Booking details
-          Padding(
-            padding: EdgeInsets.all(AppDimens.spacing16),
-            child: Column(
-              children: [
-                _buildDetailRow(
-                  Icons.location_on,
-                  'Cinema',
-                  booking.cinemaName,
-                ),
-                SizedBox(height: AppDimens.spacing12),
-                _buildDetailRow(
-                  Icons.calendar_today,
-                  'Date & Time',
-                  '${dateFormatter.format(booking.showtime)} • ${timeFormatter.format(booking.showtime)}',
-                ),
-                SizedBox(height: AppDimens.spacing12),
-                _buildDetailRow(
-                  Icons.event_seat,
-                  'Seats',
-                  booking.formattedSeats,
-                ),
-                SizedBox(height: AppDimens.spacing12),
-                _buildDetailRow(
-                  Icons.payment,
-                  'Total',
-                  priceFormatter.format(booking.totalPrice),
-                  valueColor: AppColors.primary,
-                  valueWeight: FontWeight.bold,
-                ),
-              ],
-            ),
-          ),
-
-          // Action buttons (only for active bookings)
-          if (isActive && !isCancelled) ...[
-            Divider(
-                height: 1,
-                color: AppColors.textSecondary.withValues(alpha: 0.1)),
-            Padding(
-              padding: EdgeInsets.all(AppDimens.spacing12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showCancelDialog(context, booking),
-                      icon: Icon(Icons.close, size: 18),
-                      label: Text('Cancel'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        side: BorderSide(color: AppColors.error),
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppDimens.spacing12,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: AppDimens.spacing8),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Navigate to ticket detail
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('View ticket - Coming soon!'),
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.qr_code, size: 18),
-                      label: Text('View Ticket'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppDimens.spacing12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(
-    IconData icon,
-    String label,
-    String value, {
-    Color? valueColor,
-    FontWeight? valueWeight,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: AppColors.textSecondary),
-        SizedBox(width: AppDimens.spacing12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.caption),
-              SizedBox(height: 2),
-              Text(
-                value,
-                style: AppTextStyles.body2.copyWith(
-                  color: valueColor,
-                  fontWeight: valueWeight,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -355,7 +153,7 @@ class _MyBookingsPageState extends State<MyBookingsPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text('No, Keep it'),
+            child: const Text('No, Keep it'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -374,7 +172,7 @@ class _MyBookingsPageState extends State<MyBookingsPage>
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: Text('Yes, Cancel'),
+            child: const Text('Yes, Cancel'),
           ),
         ],
       ),

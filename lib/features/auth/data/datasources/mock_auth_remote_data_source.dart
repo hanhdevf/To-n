@@ -8,8 +8,8 @@ class MockAuthRemoteDataSource {
   static final Map<String, Map<String, dynamic>> _mockUsers = {
     'user@test.com': {
       'id': '1',
-      'email': 'user@test.com',
-      'password': '123456',
+      'email': '1',
+      'password': '1',
       'displayName': 'Test User',
       'photoUrl': null,
       'createdAt': DateTime(2024, 1, 1).toIso8601String(),
@@ -51,7 +51,7 @@ class MockAuthRemoteDataSource {
     // Return user data (without password)
     final Map<String, dynamic> userJson = Map.from(userData);
     userJson.remove('password');
-    userJson['createdAt'] = DateTime.parse(userJson['createdAt'] as String);
+    // Keep createdAt as String - freezed will parse it automatically
 
     return UserModel.fromJson(userJson);
   }

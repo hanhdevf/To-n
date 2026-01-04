@@ -35,7 +35,7 @@ class _HeroBannerState extends State<HeroBanner> {
         CarouselSlider.builder(
           itemCount: widget.movies.length > 5 ? 5 : widget.movies.length,
           options: CarouselOptions(
-            height: 400,
+            height: double.infinity,
             viewportFraction: 1.0,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 5),

@@ -15,6 +15,7 @@ class CinemaBloc extends Bloc<CinemaEvent, CinemaState> {
   }) : super(const CinemaInitial()) {
     on<LoadNearbyCinemasEvent>(_onLoadNearbyCinemas);
     on<LoadShowtimesEvent>(_onLoadShowtimes);
+    on<LoadScheduleEvent>(_onLoadSchedule);
   }
 
   Future<void> _onLoadNearbyCinemas(
@@ -62,5 +63,20 @@ class CinemaBloc extends Bloc<CinemaEvent, CinemaState> {
         );
       },
     );
+  }
+
+  Future<void> _onLoadSchedule(
+    LoadScheduleEvent event,
+    Emitter<CinemaState> emit,
+  ) async {
+    emit(const CinemaLoading());
+
+    // TODO: Implement proper repository method to get all showtimes by date
+    // For now, emit empty schedule as MVP
+    // In production, this would call a new use case: GetAllShowtimesByDate
+    emit(ScheduleLoaded(
+      showtimesByMovie: const {},
+      date: event.date,
+    ));
   }
 }

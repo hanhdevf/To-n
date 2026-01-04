@@ -8,8 +8,12 @@ import 'package:galaxymob/core/widgets/widgets.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_event.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_state.dart';
+import 'package:galaxymob/features/auth/presentation/widgets/profile/profile_header.dart';
+import 'package:galaxymob/features/auth/presentation/widgets/profile/profile_logged_out.dart';
+import 'package:galaxymob/features/auth/presentation/widgets/profile/profile_menu_item.dart';
+import 'package:galaxymob/features/auth/presentation/widgets/profile/profile_quick_actions.dart';
 
-/// Profile page displaying user information
+/// Enhanced profile page with modern UI
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -21,45 +25,16 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Load profile on init
     context.read<AuthBloc>().add(const LoadProfileEvent());
-  }
-
-  void _handleLogout() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<AuthBloc>().add(const LogoutRequestedEvent());
-            },
-            child: Text('Logout', style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: AppColors.background,
-      ),
+      backgroundColor: AppColors.background,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthUnauthenticated) {
-            context.go('/login');
-          } else if (state is AuthError) {
+          if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -73,106 +48,115 @@ class _ProfilePageState extends State<ProfilePage> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (state is AuthUnauthenticated || state is AuthInitial) {
+            return const ProfileLoggedOut();
+          }
+
           if (state is ProfileLoaded || state is AuthAuthenticated) {
             final user = state is ProfileLoaded
                 ? state.user
                 : (state as AuthAuthenticated).user;
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(AppDimens.spacing24),
-              child: Column(
-                children: [
-                  SizedBox(height: AppDimens.spacing24),
-
-                  // Avatar
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [
-                          AppColors.gradientStart,
-                          AppColors.gradientEnd,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+            return CustomScrollView(
+              slivers: [
+                ProfileHeader(user: user),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppDimens.spacing16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle('Quick Actions'),
+                        SizedBox(height: AppDimens.spacing12),
+                        ProfileQuickActions(
+                          onBookings: () => context.push('/my-bookings'),
+                          onFavorites: () => _showComingSoon(context),
+                          onHistory: () => _showComingSoon(context),
                         ),
+                        SizedBox(height: AppDimens.spacing24),
+                        _buildSectionTitle('Account'),
+                        SizedBox(height: AppDimens.spacing12),
+                        ProfileMenuItem(
+                          icon: Icons.person_outline,
+                          title: 'Edit Profile',
+                          subtitle: 'Update your personal information',
+                          onTap: () => _showComingSoon(context),
+                        ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.lock_outline,
+                          title: 'Change Password',
+                          subtitle: 'Update your password',
+                          onTap: () => _showComingSoon(context),
+                        ),
+                        SizedBox(height: AppDimens.spacing24),
+                        _buildSectionTitle('Preferences'),
+                        SizedBox(height: AppDimens.spacing12),
+                        ProfileMenuItem(
+                          icon: Icons.notifications_outlined,
+                          title: 'Notifications',
+                          subtitle: 'Manage notification settings',
+                          onTap: () => _showComingSoon(context),
+                          trailing: const Icon(Icons.chevron_right),
+                        ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.language_outlined,
+                          title: 'Language',
+                          subtitle: 'English',
+                          onTap: () => _showComingSoon(context),
+                          trailing: const Icon(Icons.chevron_right),
+                        ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.dark_mode_outlined,
+                          title: 'Dark Mode',
+                          subtitle: 'Always dark',
+                          trailing: Switch(
+                            value: true,
+                            onChanged: (value) => _showComingSoon(context),
+                            activeColor: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(height: AppDimens.spacing24),
+                        _buildSectionTitle('Support'),
+                        SizedBox(height: AppDimens.spacing12),
+                        ProfileMenuItem(
+                          icon: Icons.help_outline,
+                          title: 'Help & Support',
+                          subtitle: 'Get help with the app',
+                          onTap: () => _showComingSoon(context),
+                        ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.policy_outlined,
+                          title: 'Privacy Policy',
+                          subtitle: 'Read our privacy policy',
+                          onTap: () => _showComingSoon(context),
+                        ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.info_outline,
+                          title: 'About',
+                          subtitle: 'Version 1.0.0',
+                          onTap: () => _showAboutDialog(context),
+                        ),
+                        SizedBox(height: AppDimens.spacing32),
+                        SecondaryButton(
+                          text: 'Logout',
+                          onPressed: _handleLogout,
+                          icon:
+                              const Icon(Icons.logout, color: AppColors.error),
+                        ),
+                        SizedBox(height: AppDimens.spacing48),
                       ],
                     ),
-                    child: Center(
-                      child: Text(
-                        user.displayName[0].toUpperCase(),
-                        style: AppTextStyles.h1.copyWith(
-                          fontSize: 48,
-                          color: AppColors.white,
-                        ),
-                      ),
-                    ),
                   ),
-
-                  SizedBox(height: AppDimens.spacing24),
-
-                  // Name
-                  Text(user.displayName, style: AppTextStyles.h2),
-
-                  SizedBox(height: AppDimens.spacing8),
-
-                  // Email
-                  Text(user.email, style: AppTextStyles.body1),
-
-                  SizedBox(height: AppDimens.spacing48),
-
-                  // Profile Info Cards
-                  _buildInfoCard(
-                    icon: Icons.person_outline,
-                    title: 'Display Name',
-                    value: user.displayName,
-                  ),
-
-                  SizedBox(height: AppDimens.spacing16),
-
-                  _buildInfoCard(
-                    icon: Icons.email_outlined,
-                    title: 'Email',
-                    value: user.email,
-                  ),
-
-                  SizedBox(height: AppDimens.spacing16),
-
-                  _buildInfoCard(
-                    icon: Icons.badge_outlined,
-                    title: 'User ID',
-                    value: user.id,
-                  ),
-
-                  SizedBox(height: AppDimens.spacing32),
-
-                  // My Bookings Button
-                  PrimaryButton(
-                    text: 'My Bookings',
-                    onPressed: () => context.push('/my-bookings'),
-                    icon: const Icon(Icons.receipt_long, color: Colors.white),
-                  ),
-
-                  SizedBox(height: AppDimens.spacing16),
-
-                  // Logout Button
-                  SecondaryButton(
-                    text: 'Logout',
-                    onPressed: _handleLogout,
-                    icon: const Icon(Icons.logout, color: AppColors.error),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
-          // Error or unauthenticated
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -200,38 +184,70 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(AppDimens.spacing16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: AppTextStyles.h3.copyWith(
+        color: AppColors.textPrimary,
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-            ),
-            child: Icon(icon, color: AppColors.primary),
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Coming soon!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'GalaxyMov',
+      applicationVersion: '1.0.0',
+      applicationIcon: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.gradientStart, AppColors.gradientEnd],
           ),
-          SizedBox(width: AppDimens.spacing16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTextStyles.caption),
-                SizedBox(height: AppDimens.spacing4),
-                Text(value, style: AppTextStyles.body1Medium),
-              ],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.movie, color: Colors.white, size: 32),
+      ),
+      children: [
+        const Text('A modern cinema booking application'),
+        const SizedBox(height: 8),
+        const Text('Built with Flutter & Clean Architecture'),
+      ],
+    );
+  }
+
+  void _handleLogout() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Logout', style: AppTextStyles.h3),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.read<AuthBloc>().add(const LogoutRequestedEvent());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
             ),
+            child: const Text('Logout'),
           ),
         ],
       ),
