@@ -3,6 +3,7 @@ import 'package:galaxymob/core/error/failures.dart';
 import 'package:galaxymob/core/usecase/usecase.dart';
 import 'package:galaxymob/features/auth/domain/usecases/get_current_user.dart';
 import 'package:galaxymob/features/auth/domain/usecases/login_with_email.dart';
+import 'package:galaxymob/features/auth/domain/usecases/login_with_google.dart';
 import 'package:galaxymob/features/auth/domain/usecases/logout.dart';
 import 'package:galaxymob/features/auth/domain/usecases/register_with_email.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_event.dart';
@@ -11,12 +12,14 @@ import 'package:galaxymob/features/auth/presentation/bloc/auth_state.dart';
 /// BLoC for handling authentication logic
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginWithEmail loginWithEmail;
+  final LoginWithGoogle loginWithGoogle;
   final RegisterWithEmail registerWithEmail;
   final GetCurrentUser getCurrentUser;
   final Logout logout;
 
   AuthBloc({
     required this.loginWithEmail,
+    required this.loginWithGoogle,
     required this.registerWithEmail,
     required this.getCurrentUser,
     required this.logout,
@@ -24,6 +27,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // Register event handlers
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
     on<LoginRequestedEvent>(_onLoginRequested);
+    on<GoogleSignInRequestedEvent>(_onGoogleSignInRequested);
     on<RegisterRequestedEvent>(_onRegisterRequested);
     on<LogoutRequestedEvent>(_onLogoutRequested);
     on<LoadProfileEvent>(_onLoadProfile);
@@ -54,6 +58,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await loginWithEmail(
       LoginParams(email: event.email, password: event.password),
     );
+
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(AuthAuthenticated(user)),
+    );
+  }
+
+  /// Handle Google Sign-In request
+  Future<void> _onGoogleSignInRequested(
+    GoogleSignInRequestedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    final result = await loginWithGoogle(NoParams());
 
     result.fold(
       (failure) => emit(AuthError(failure.message)),

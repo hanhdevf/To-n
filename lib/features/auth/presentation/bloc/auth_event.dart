@@ -50,3 +50,8 @@ class LogoutRequestedEvent extends AuthEvent {
 class LoadProfileEvent extends AuthEvent {
   const LoadProfileEvent();
 }
+
+/// Login with Google
+class GoogleSignInRequestedEvent extends AuthEvent {
+  const GoogleSignInRequestedEvent();
+}

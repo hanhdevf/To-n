@@ -134,7 +134,7 @@ class TicketQrCard extends StatelessWidget {
   Widget _buildTicketInfo() {
     final formatter = NumberFormat.currency(
       locale: 'vi_VN',
-      symbol: 'ƒ,®',
+      symbol: '₫',
       decimalDigits: 0,
     );
 

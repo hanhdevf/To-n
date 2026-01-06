@@ -22,7 +22,7 @@ class BookingSummaryDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(
       locale: 'vi_VN',
-      symbol: 'ƒ,®',
+      symbol: '₫',
       decimalDigits: 0,
     );
 

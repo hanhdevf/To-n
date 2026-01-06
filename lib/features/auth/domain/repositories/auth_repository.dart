@@ -25,4 +25,7 @@ abstract class AuthRepository {
 
   /// Check if user is logged in
   Future<bool> isLoggedIn();
+
+  /// Login with Google account
+  Future<Either<Failure, User>> loginWithGoogle();
 }

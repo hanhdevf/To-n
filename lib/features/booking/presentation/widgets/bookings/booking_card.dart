@@ -25,7 +25,7 @@ class BookingCard extends StatelessWidget {
     final timeFormatter = DateFormat('HH:mm');
     final priceFormatter = NumberFormat.currency(
       locale: 'vi_VN',
-      symbol: 'ƒ,®',
+      symbol: '₫',
       decimalDigits: 0,
     );
     final isCancelled = booking.status == BookingStatus.cancelled;
@@ -119,7 +119,7 @@ class BookingCard extends StatelessWidget {
                   icon: Icons.calendar_today,
                   label: 'Date & Time',
                   value:
-                      '${dateFormatter.format(booking.showtime)} ƒ?› ${timeFormatter.format(booking.showtime)}',
+                      '${dateFormatter.format(booking.showtime)} • ${timeFormatter.format(booking.showtime)}',
                 ),
                 SizedBox(height: AppDimens.spacing12),
                 _DetailRow(

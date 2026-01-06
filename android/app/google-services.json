@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "326749484112",
+    "project_id": "galaxymob-65bae",
+    "storage_bucket": "galaxymob-65bae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326749484112:android:9b922969300b010802cd55",
+        "android_client_info": {
+          "package_name": "com.example.galaxymob"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "326749484112-ekf4s6tq5og0e6mhl8nlbt5ohqdrofg6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.galaxymob",
+            "certificate_hash": "089704a27696403ebd038283d2891f215d1a8bb6"
+          }
+        },
+        {
+          "client_id": "326749484112-010h0uc049v465ehi9931cocg1chiep0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXwlTG_tCtIIq7ljNY_6Ssyi7pLXm6Lw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "326749484112-010h0uc049v465ehi9931cocg1chiep0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "326749484112-crblc8vl60foe1r2ggel9bdc5tm3edpg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.galaxymob"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

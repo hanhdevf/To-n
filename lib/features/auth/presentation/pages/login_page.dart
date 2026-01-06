@@ -10,7 +10,7 @@ import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_event.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_state.dart';
 
-/// Login page
+/// Login page with Email/Password and Google Sign-In
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -33,12 +33,16 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-        LoginRequestedEvent(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ),
-      );
+            LoginRequestedEvent(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+            ),
+          );
     }
+  }
+
+  void _handleGoogleSignIn() {
+    context.read<AuthBloc>().add(const GoogleSignInRequestedEvent());
   }
 
   @override
@@ -119,6 +123,45 @@ class _LoginPageState extends State<LoginPage> {
 
                     SizedBox(height: AppDimens.spacing24),
 
+                    // Divider with "Or continue with"
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppDimens.spacing16,
+                          ),
+                          child: Text(
+                            'Or continue with',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: AppDimens.spacing24),
+
+                    // Google Sign-In Button
+                    _GoogleSignInButton(
+                      onPressed: isLoading ? null : _handleGoogleSignIn,
+                      isLoading: isLoading,
+                    ),
+
+                    SizedBox(height: AppDimens.spacing24),
+
                     // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -138,48 +181,83 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
-
-                    SizedBox(height: AppDimens.spacing48),
-
-                    // Test Accounts Info
-                    Container(
-                      padding: EdgeInsets.all(AppDimens.spacing16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(
-                          AppDimens.radiusMedium,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '🧪 Test Accounts',
-                            style: AppTextStyles.body2Medium,
-                          ),
-                          SizedBox(height: AppDimens.spacing8),
-                          Text(
-                            'user@test.com / 123456',
-                            style: AppTextStyles.caption.copyWith(
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                          SizedBox(height: AppDimens.spacing4),
-                          Text(
-                            'admin@test.com / admin123',
-                            style: AppTextStyles.caption.copyWith(
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Google Sign-In Button with premium styling
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _GoogleSignInButton({
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: AppColors.textSecondary.withValues(alpha: 0.3),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+          ),
+          backgroundColor: AppColors.surface,
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.textSecondary,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google Logo
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'G',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppDimens.spacing12),
+                  Text(
+                    'Continue with Google',
+                    style: AppTextStyles.button.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

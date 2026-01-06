@@ -78,7 +78,7 @@ class _HomeView extends StatelessWidget {
                           .read<MovieBloc>()
                           .add(const LoadTrendingEvent()),
                       onMovieTap: (movie) => context.push('/movie/${movie.id}'),
-                      onNotificationTap: () {},
+                      onNotificationTap: () => context.push('/notifications'),
                       onProfileTap: () => context.go('/profile'),
                     ),
                     SliverToBoxAdapter(

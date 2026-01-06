@@ -32,6 +32,10 @@ import 'package:galaxymob/features/movies/presentation/pages/all_reviews_page.da
 import 'package:galaxymob/features/movies/domain/entities/review.dart';
 import 'package:galaxymob/features/booking/presentation/pages/ticket_detail_page.dart';
 import 'package:galaxymob/features/booking/domain/entities/ticket.dart';
+import 'package:galaxymob/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:galaxymob/features/notification/presentation/bloc/notification_event.dart';
+import 'package:galaxymob/features/notification/presentation/pages/notification_page.dart';
+import 'package:galaxymob/features/admin/presentation/pages/admin_seeding_page.dart';
 
 import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/genre_event.dart';
@@ -60,6 +64,13 @@ class AppRouter {
           create: (context) => getIt<AuthBloc>(),
           child: const RegisterPage(),
         ),
+      ),
+
+      // Admin Seeding Page (dev-only)
+      GoRoute(
+        path: '/admin/seeding',
+        name: 'adminSeeding',
+        builder: (context, state) => const AdminSeedingPage(),
       ),
 
       // Main Shell with Bottom Navigation
@@ -130,6 +141,17 @@ class AppRouter {
         path: '/my-bookings',
         name: 'myBookings',
         builder: (context, state) => const MyBookingsPage(),
+      ),
+
+      // Notifications Route (outside shell)
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        builder: (context, state) => BlocProvider(
+          create: (context) =>
+              getIt<NotificationBloc>()..add(const LoadNotificationsEvent()),
+          child: const NotificationPage(),
+        ),
       ),
 
       // Movie Detail Route (outside shell)

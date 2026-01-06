@@ -1,15 +1,17 @@
 import 'package:get_it/get_it.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:galaxymob/core/network/api_client.dart';
 import 'package:galaxymob/core/network/network_info.dart';
-import 'package:galaxymob/features/auth/data/datasources/auth_local_data_source.dart';
-import 'package:galaxymob/features/auth/data/datasources/mock_auth_remote_data_source.dart';
+import 'package:galaxymob/core/services/firestore_seeding_service.dart';
+import 'package:galaxymob/features/auth/data/datasources/firebase_auth_service.dart';
 import 'package:galaxymob/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:galaxymob/features/auth/domain/repositories/auth_repository.dart';
 import 'package:galaxymob/features/auth/domain/usecases/get_current_user.dart';
 import 'package:galaxymob/features/auth/domain/usecases/login_with_email.dart';
+import 'package:galaxymob/features/auth/domain/usecases/login_with_google.dart';
 import 'package:galaxymob/features/auth/domain/usecases/logout.dart';
 import 'package:galaxymob/features/auth/domain/usecases/register_with_email.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
@@ -31,17 +33,17 @@ import 'package:galaxymob/features/movies/domain/repositories/genre_repository.d
 import 'package:galaxymob/features/movies/domain/usecases/get_genres.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
 import 'package:galaxymob/features/cinema/data/datasources/mock_cinema_data_source.dart';
-import 'package:galaxymob/features/cinema/data/repositories/cinema_repository_impl.dart';
+import 'package:galaxymob/features/cinema/data/datasources/cinema_firestore_data_source.dart';
+import 'package:galaxymob/features/cinema/data/repositories/cinema_firestore_repository_impl.dart';
 import 'package:galaxymob/features/cinema/domain/repositories/cinema_repository.dart';
 import 'package:galaxymob/features/cinema/domain/usecases/get_nearby_cinemas.dart';
 import 'package:galaxymob/features/cinema/domain/usecases/get_showtimes.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_bloc.dart';
-import 'package:galaxymob/features/booking/data/datasources/mock_seat_data_source.dart';
-import 'package:galaxymob/features/booking/data/datasources/mock_booking_data_source.dart';
+import 'package:galaxymob/features/booking/data/datasources/booking_firestore_data_source.dart';
 import 'package:galaxymob/features/booking/data/repositories/mock_payment_service.dart';
 import 'package:galaxymob/features/booking/data/repositories/ticket_service_impl.dart';
-import 'package:galaxymob/features/booking/data/repositories/booking_repository_impl.dart';
-import 'package:galaxymob/features/booking/data/repositories/seat_repository_impl.dart';
+import 'package:galaxymob/features/booking/data/repositories/booking_firestore_repository_impl.dart';
+import 'package:galaxymob/features/booking/data/repositories/seat_firestore_repository_impl.dart';
 import 'package:galaxymob/features/booking/domain/repositories/payment_service.dart';
 import 'package:galaxymob/features/booking/domain/repositories/ticket_service.dart';
 import 'package:galaxymob/features/booking/domain/repositories/booking_repository.dart';
@@ -59,6 +61,13 @@ import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
+import 'package:galaxymob/features/notification/data/datasources/mock_notification_data_source.dart';
+import 'package:galaxymob/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:galaxymob/features/notification/domain/repositories/notification_repository.dart';
+import 'package:galaxymob/features/notification/domain/usecases/get_notifications.dart';
+import 'package:galaxymob/features/notification/domain/usecases/mark_all_notifications_as_read.dart';
+import 'package:galaxymob/features/notification/domain/usecases/mark_notification_as_read.dart';
+import 'package:galaxymob/features/notification/presentation/bloc/notification_bloc.dart';
 
 final getIt = GetIt.instance;
 
@@ -71,28 +80,26 @@ Future<void> configureDependencies() async {
     () => NetworkInfoImpl(getIt<Connectivity>()),
   );
 
-  // SharedPreferences (async)
-  final sharedPreferences = await SharedPreferences.getInstance();
-  getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+  // Firebase services
+  getIt.registerLazySingleton<FirebaseFirestore>(
+      () => FirebaseFirestore.instance);
+  getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
 
-  // Auth data sources
-  getIt.registerLazySingleton<MockAuthRemoteDataSource>(
-    () => MockAuthRemoteDataSource(),
-  );
-  getIt.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSource(getIt<SharedPreferences>()),
+  // Auth - Firebase Auth Service
+  getIt.registerLazySingleton<FirebaseAuthService>(
+    () => FirebaseAuthService(),
   );
 
   // Auth repository
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      remoteDataSource: getIt<MockAuthRemoteDataSource>(),
-      localDataSource: getIt<AuthLocalDataSource>(),
+      authService: getIt<FirebaseAuthService>(),
     ),
   );
 
   // Auth use cases
   getIt.registerLazySingleton(() => LoginWithEmail(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => LoginWithGoogle(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => RegisterWithEmail(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => GetCurrentUser(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => Logout(getIt<AuthRepository>()));
@@ -101,6 +108,7 @@ Future<void> configureDependencies() async {
   getIt.registerFactory(
     () => AuthBloc(
       loginWithEmail: getIt<LoginWithEmail>(),
+      loginWithGoogle: getIt<LoginWithGoogle>(),
       registerWithEmail: getIt<RegisterWithEmail>(),
       getCurrentUser: getIt<GetCurrentUser>(),
       logout: getIt<Logout>(),
@@ -173,11 +181,22 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<MockCinemaDataSource>(
     () => MockCinemaDataSource(),
   );
+  getIt.registerLazySingleton<CinemaFirestoreDataSource>(
+    () => CinemaFirestoreDataSource(getIt<FirebaseFirestore>()),
+  );
 
-  // Cinema repository
+  // Cinema repository (using Firestore)
   getIt.registerLazySingleton<CinemaRepository>(
-    () => CinemaRepositoryImpl(
-      dataSource: getIt<MockCinemaDataSource>(),
+    () => CinemaFirestoreRepositoryImpl(
+      dataSource: getIt<CinemaFirestoreDataSource>(),
+    ),
+  );
+
+  // Seeding service
+  getIt.registerLazySingleton<FirestoreSeedingService>(
+    () => FirestoreSeedingService(
+      firestoreDataSource: getIt<CinemaFirestoreDataSource>(),
+      mockDataSource: getIt<MockCinemaDataSource>(),
     ),
   );
 
@@ -194,13 +213,9 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  // Booking data sources
-  getIt.registerLazySingleton<MockSeatDataSource>(
-    () => MockSeatDataSource(),
-  );
-
-  getIt.registerLazySingleton<MockBookingDataSource>(
-    () => MockBookingDataSource(),
+  // Booking Firestore data source
+  getIt.registerLazySingleton<BookingFirestoreDataSource>(
+    () => BookingFirestoreDataSource(getIt<FirebaseFirestore>()),
   );
 
   // Payment service
@@ -213,16 +228,19 @@ Future<void> configureDependencies() async {
     () => TicketServiceImpl(),
   );
 
-  // Booking repositories
+  // Booking repositories (using Firestore)
   getIt.registerLazySingleton<BookingRepository>(
-    () => BookingRepositoryImpl(
-      dataSource: getIt<MockBookingDataSource>(),
+    () => BookingFirestoreRepositoryImpl(
+      bookingDataSource: getIt<BookingFirestoreDataSource>(),
+      cinemaDataSource: getIt<CinemaFirestoreDataSource>(),
+      auth: getIt<FirebaseAuth>(),
     ),
   );
 
+  // Seat repository (using Firestore)
   getIt.registerLazySingleton<SeatRepository>(
-    () => SeatRepositoryImpl(
-      dataSource: getIt<MockSeatDataSource>(),
+    () => SeatFirestoreRepositoryImpl(
+      cinemaDataSource: getIt<CinemaFirestoreDataSource>(),
     ),
   );
 
@@ -265,6 +283,38 @@ Future<void> configureDependencies() async {
     () => BookingBloc(
       getUserBookings: getIt<GetUserBookings>(),
       cancelBooking: getIt<CancelBooking>(),
+    ),
+  );
+
+  // Notification data sources
+  getIt.registerLazySingleton<MockNotificationDataSource>(
+    () => MockNotificationDataSource(),
+  );
+
+  // Notification repository
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      dataSource: getIt<MockNotificationDataSource>(),
+    ),
+  );
+
+  // Notification use cases
+  getIt.registerLazySingleton(
+    () => GetNotifications(getIt<NotificationRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => MarkNotificationAsRead(getIt<NotificationRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => MarkAllNotificationsAsRead(getIt<NotificationRepository>()),
+  );
+
+  // Notification BLoC
+  getIt.registerFactory(
+    () => NotificationBloc(
+      getNotifications: getIt<GetNotifications>(),
+      markNotificationAsRead: getIt<MarkNotificationAsRead>(),
+      markAllNotificationsAsRead: getIt<MarkAllNotificationsAsRead>(),
     ),
   );
 }

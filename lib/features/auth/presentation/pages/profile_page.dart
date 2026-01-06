@@ -141,6 +141,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           subtitle: 'Version 1.0.0',
                           onTap: () => _showAboutDialog(context),
                         ),
+                        SizedBox(height: AppDimens.spacing8),
+                        ProfileMenuItem(
+                          icon: Icons.settings_suggest,
+                          title: 'Admin: Seed Firestore',
+                          subtitle: 'Populate initial cinema & showtime data',
+                          onTap: () => context.push('/admin/seeding'),
+                        ),
                         SizedBox(height: AppDimens.spacing32),
                         SecondaryButton(
                           text: 'Logout',

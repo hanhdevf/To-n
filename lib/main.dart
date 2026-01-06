@@ -5,6 +5,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:galaxymob/config/routes/app_router.dart';
 import 'package:galaxymob/config/theme/app_theme.dart';
 import 'package:galaxymob/core/bloc/app_bloc_observer.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:galaxymob/firebase_options.dart';
 import 'package:galaxymob/core/di/injection.dart';
 
 void main() async {
@@ -21,8 +23,10 @@ void main() async {
   // Initialize Hive for local storage
   await Hive.initFlutter();
 
-  // Initialize Firebase (will be configured in Phase 2)
-  // await Firebase.initializeApp();
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Setup BLoC observer for logging
   Bloc.observer = AppBlocObserver();
