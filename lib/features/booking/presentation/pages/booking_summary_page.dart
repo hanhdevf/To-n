@@ -7,6 +7,7 @@ import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
 import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
+import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_state.dart';
@@ -23,7 +24,8 @@ class BookingSummaryPage extends StatefulWidget {
   final String movieTitle;
   final String cinemaName;
   final String showtime;
-  final List<String> selectedSeats;
+  final DateTime? showtimeDateTime;
+  final List<Seat> selectedSeats;
   final double totalPrice;
   final String? movieId;
   final String? cinemaId;
@@ -34,6 +36,7 @@ class BookingSummaryPage extends StatefulWidget {
     required this.movieTitle,
     required this.cinemaName,
     required this.showtime,
+    this.showtimeDateTime,
     required this.selectedSeats,
     required this.totalPrice,
     this.movieId,
@@ -57,6 +60,10 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final displayShowtime = widget.showtimeDateTime != null
+        ? DateFormat('EEE, MMM d, HH:mm').format(widget.showtimeDateTime!)
+        : widget.showtime;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Booking Summary', style: AppTextStyles.h3),
@@ -77,16 +84,7 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
           BlocListener<BookingBloc, BookingState>(
             listener: (context, state) {
               if (state is BookingCreated) {
-                context.pushNamed('myBookings');
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Booking created! Generate your ticket in My Bookings'),
-                    backgroundColor: AppColors.success,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                _showBookingSuccess(context, state.booking);
               } else if (state is BookingError) {
                 _showErrorDialog(context, state.message);
               }
@@ -101,7 +99,7 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
               SizedBox(height: AppDimens.spacing16),
               BookingSummaryDetails(
                 cinemaName: widget.cinemaName,
-                showtime: widget.showtime,
+                showtime: displayShowtime,
                 selectedSeats: widget.selectedSeats,
                 totalPrice: widget.totalPrice,
               ),
@@ -142,19 +140,12 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         );
   }
 
-  DateTime _parseShowtime(String showtimeString) {
-    try {
-      final now = DateTime.now();
-      return now.add(const Duration(days: 1));
-    } catch (e) {
-      return DateTime.now().add(const Duration(days: 1));
-    }
-  }
-
   void _onPaymentSuccess(BuildContext context, String transactionId) {
     // After payment success, create booking in Firestore
     final bookingFee = widget.totalPrice * BookingConstants.bookingFeeRate;
     final finalTotal = widget.totalPrice + bookingFee;
+    final bookingDateTime =
+        widget.showtimeDateTime ?? _fallbackParseTime(widget.showtime);
 
     context.read<BookingBloc>().add(
           CreateBookingEvent(
@@ -163,31 +154,13 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
             cinemaId: widget.cinemaId ?? 'unknown',
             cinemaName: widget.cinemaName,
             showtimeId: widget.showtimeId ?? 'unknown',
-            showtime: _parseShowtime(widget.showtime),
+            showtime: bookingDateTime,
             selectedSeats: widget.selectedSeats,
             totalPrice: finalTotal,
-            paymentMethod: _selectedPaymentMethod.displayName,
+            paymentMethod: _selectedPaymentMethod,
             transactionId: transactionId,
           ),
         );
-  }
-
-  void _navigateToTicketView(BuildContext context, Booking booking) {
-    context.pushReplacementNamed(
-      'ticketView',
-      extra: {
-        'movieTitle': booking.movieTitle,
-        'cinemaName': booking.cinemaName,
-        'showtime': widget.showtime,
-        'selectedSeats': widget.selectedSeats,
-        'totalPrice': booking.totalPrice,
-        'userName': booking.userName,
-        'userEmail': booking.userEmail,
-        'userPhone': booking.userPhone,
-        'transactionId': booking.transactionId,
-        'paymentMethod': booking.paymentMethod,
-      },
-    );
   }
 
   void _showErrorDialog(BuildContext context, String message) {
@@ -214,5 +187,87 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         ],
       ),
     );
+  }
+
+  void _showBookingSuccess(BuildContext context, Booking booking) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimens.radiusLarge),
+        ),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.all(AppDimens.spacing24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppColors.success, size: 32),
+                  SizedBox(width: AppDimens.spacing12),
+                  Text('Payment Successful', style: AppTextStyles.h2),
+                ],
+              ),
+              SizedBox(height: AppDimens.spacing12),
+              Text(
+                'Your booking has been created. You can view or generate your ticket from My Bookings.',
+                style: AppTextStyles.body1,
+              ),
+              SizedBox(height: AppDimens.spacing24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      child: const Text('Stay Here'),
+                    ),
+                  ),
+                  SizedBox(width: AppDimens.spacing12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        context.pushNamed('myBookings');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('View My Bookings'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  DateTime _fallbackParseTime(String showtimeString) {
+    // Expect HH:mm, fallback to now if parsing fails
+    try {
+      final now = DateTime.now();
+      final parts = showtimeString.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          return DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+        }
+      }
+    } catch (_) {}
+    return DateTime.now();
   }
 }

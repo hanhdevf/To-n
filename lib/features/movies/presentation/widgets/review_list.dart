@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:galaxymob/config/routes/heplers/route_args.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
@@ -38,10 +39,10 @@ class ReviewList extends StatelessWidget {
                 onTap: () {
                   context.pushNamed(
                     'all_reviews',
-                    extra: {
-                      'reviews': reviews,
-                      'movieTitle': movieTitle,
-                    },
+                    extra: AllReviewsArgs(
+                      reviews: reviews,
+                      movieTitle: movieTitle,
+                    ),
                   );
                 },
                 child: Text(

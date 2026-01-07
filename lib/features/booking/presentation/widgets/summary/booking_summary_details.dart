@@ -3,11 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
+import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
+import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 
 class BookingSummaryDetails extends StatelessWidget {
   final String cinemaName;
   final String showtime;
-  final List<String> selectedSeats;
+  final List<Seat> selectedSeats;
   final double totalPrice;
 
   const BookingSummaryDetails({
@@ -20,13 +22,10 @@ class BookingSummaryDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '₫',
-      decimalDigits: 0,
-    );
+    final formatter =
+        NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
 
-    final bookingFee = totalPrice * 0.05;
+    final bookingFee = totalPrice * BookingConstants.bookingFeeRate;
     final finalTotal = totalPrice + bookingFee;
 
     return Container(
@@ -51,8 +50,11 @@ class BookingSummaryDetails extends StatelessWidget {
           SizedBox(height: AppDimens.spacing12),
           _buildDetailRow('Date & Time', showtime, icon: Icons.access_time),
           SizedBox(height: AppDimens.spacing12),
-          _buildDetailRow('Seats', selectedSeats.join(', '),
-              icon: Icons.event_seat),
+          _buildDetailRow(
+            'Seats',
+            selectedSeats.map((s) => s.displayName).join(', '),
+            icon: Icons.event_seat,
+          ),
           SizedBox(height: AppDimens.spacing12),
           _buildDetailRow('Tickets', '${selectedSeats.length}x',
               icon: Icons.confirmation_number),

@@ -17,17 +17,9 @@ class SeatFirestoreRepositoryImpl implements SeatRepository {
     required double basePrice,
   }) async {
     try {
-      print('🔍 [DEBUG] Fetching showtime: $showtimeId');
-
-      // Fetch showtime to get REAL-TIME booked seats and price
+      // Fetch showtime to get real-time booked seats and current price
       final showtime = await cinemaDataSource.getShowtime(showtimeId);
-
-      // Use the CURRENT price from Firestore, not the passed parameter
       final currentPrice = showtime.price;
-
-      print('💰 [DEBUG] Firestore price: $currentPrice (passed: $basePrice)');
-      print(
-          '📍 [DEBUG] Cinema: ${showtime.cinemaId}, Movie: ${showtime.movieId}');
 
       // Generate seat layout (8 rows A-H)
       final List<List<Seat>> seatLayout = [];
@@ -37,14 +29,9 @@ class SeatFirestoreRepositoryImpl implements SeatRepository {
         final rowSeats = <Seat>[];
         final rowName = rows[rowIndex];
 
-        int leftSeats, rightSeats;
-        if (rowIndex < 2) {
-          leftSeats = 4;
-          rightSeats = 4;
-        } else {
-          leftSeats = 5;
-          rightSeats = 5;
-        }
+        final isFrontRow = rowIndex < 2;
+        final leftSeats = isFrontRow ? 4 : 5;
+        final rightSeats = isFrontRow ? 4 : 5;
 
         int seatNumber = 1;
 

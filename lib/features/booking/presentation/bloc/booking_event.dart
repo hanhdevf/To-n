@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
+import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 
 /// Booking Events
 abstract class BookingEvent extends Equatable {
@@ -47,9 +48,9 @@ class CreateBookingEvent extends BookingEvent {
   final String cinemaName;
   final String showtimeId;
   final DateTime showtime;
-  final List<dynamic> selectedSeats; // Will be List<Seat> or List<String>
+  final List<Seat> selectedSeats;
   final double totalPrice;
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
   final String transactionId;
 
   const CreateBookingEvent({

@@ -19,12 +19,9 @@ class TicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: 'ƒ,®',
-      decimalDigits: 0,
-    );
-    final dateFormat = DateFormat('EEE, MMM d ƒ?› HH:mm');
+    final formatter =
+        NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
+    final dateFormat = DateFormat('EEE, MMM d, HH:mm');
 
     return Container(
       margin: EdgeInsets.only(bottom: AppDimens.spacing16),
@@ -32,9 +29,8 @@ class TicketCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
         border: Border.all(
-          color: isPast
-              ? Colors.white12
-              : AppColors.primary.withValues(alpha: 0.3),
+          color:
+              isPast ? Colors.white12 : AppColors.primary.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [

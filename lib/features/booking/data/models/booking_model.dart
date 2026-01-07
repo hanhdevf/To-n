@@ -169,6 +169,7 @@ class BookingModel {
   /// Convert to Firestore document
   Map<String, dynamic> toFirestore() {
     return {
+      'id': id,
       'user_id': userId,
       'showtime_id': showtimeId,
       'movie_id': movieId,

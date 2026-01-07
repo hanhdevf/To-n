@@ -65,7 +65,8 @@ class BookingFirestoreDataSource {
           });
 
           // 4. Create booking document
-          final bookingRef = _firestore.collection('bookings').doc();
+          final bookingRef =
+              _firestore.collection('bookings').doc(booking.id);
           transaction.set(bookingRef, booking.toFirestore());
 
           return bookingRef.id;
@@ -98,7 +99,7 @@ class BookingFirestoreDataSource {
       final showtimeId = bookingData['showtime_id'] as String;
 
       // Safely get seat IDs, handle null case
-      final seatsData = bookingData['selected_seats'];
+      final seatsData = bookingData['seats'];
       final List<String> seats = [];
 
       if (seatsData != null && seatsData is List) {

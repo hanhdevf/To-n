@@ -16,6 +16,7 @@ class SeatSelectionPage extends StatelessWidget {
   final String movieTitle;
   final String cinemaName;
   final String showtime;
+  final DateTime? showtimeDateTime;
   final double basePrice;
   final String? movieId;
   final String? cinemaId;
@@ -26,6 +27,7 @@ class SeatSelectionPage extends StatelessWidget {
     required this.movieTitle,
     required this.cinemaName,
     required this.showtime,
+    this.showtimeDateTime,
     required this.basePrice,
     this.movieId,
     this.cinemaId,
@@ -73,6 +75,7 @@ class SeatSelectionPage extends StatelessWidget {
             movieTitle: movieTitle,
             cinemaName: cinemaName,
             showtime: showtime,
+            showtimeDateTime: showtimeDateTime,
             showtimeId: showtimeId,
             movieId: movieId,
             cinemaId: cinemaId,

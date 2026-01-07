@@ -113,26 +113,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       final bookingId =
           '${BookingConstants.bookingIdPrefix}${const Uuid().v4().substring(0, 8).toUpperCase()}';
 
-      // Convert selectedSeats to List<Seat>
-      final List<Seat> seats;
-      if (event.selectedSeats.isNotEmpty &&
-          event.selectedSeats.first is String) {
-        // Convert from List<String> to List<Seat>
-        final seatStrings = event.selectedSeats.cast<String>();
-        seats = seatStrings
-            .map((s) => Seat(
-                  id: s,
-                  row: s.substring(0, 1),
-                  number: int.tryParse(s.substring(1)) ?? 0,
-                  type: SeatType.regular,
-                  status: SeatStatus.selected,
-                  price: event.totalPrice / seatStrings.length,
-                ))
-            .toList();
-      } else {
-        seats = event.selectedSeats.cast<Seat>();
-      }
-
       final params = BookingParams(
         bookingId: bookingId,
         movieId: event.movieId,
@@ -141,12 +121,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         cinemaName: event.cinemaName,
         showtimeId: event.showtimeId,
         showtime: event.showtime,
-        selectedSeats: seats,
+        selectedSeats: event.selectedSeats,
         totalPrice: event.totalPrice,
         userName: user.displayName ?? 'User',
         userEmail: user.email ?? '',
         userPhone: user.phoneNumber ?? '',
-        paymentMethod: _stringToPaymentMethod(event.paymentMethod),
+        paymentMethod: event.paymentMethod,
         transactionId: event.transactionId,
       );
 
@@ -191,21 +171,4 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
   }
 
-  PaymentMethod _stringToPaymentMethod(String method) {
-    switch (method.toLowerCase()) {
-      case 'creditcard':
-      case 'credit_card':
-        return PaymentMethod.creditCard;
-      case 'momo':
-        return PaymentMethod.momo;
-      case 'zalopay':
-      case 'zalo_pay':
-        return PaymentMethod.zaloPay;
-      case 'vnpay':
-      case 'vn_pay':
-        return PaymentMethod.vnPay;
-      default:
-        return PaymentMethod.creditCard;
-    }
-  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
 import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 import 'package:galaxymob/features/booking/domain/usecases/get_seat_layout.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_event.dart';
@@ -65,10 +66,10 @@ class SeatBloc extends Bloc<SeatEvent, SeatState> {
       updatedSelectedSeats.removeWhere((s) => s.id == seat.id);
     } else {
       // Select (max 10 seats)
-      if (updatedSelectedSeats.length < 10) {
+      if (updatedSelectedSeats.length < BookingConstants.maxSeatsPerBooking) {
         updatedSelectedSeats.add(seat.copyWith(status: SeatStatus.selected));
       } else {
-        return; // Don't allow more than 10 seats
+        return; // Don't allow more than the configured max seats
       }
     }
 

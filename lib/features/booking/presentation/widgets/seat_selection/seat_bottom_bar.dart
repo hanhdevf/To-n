@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
+import 'package:galaxymob/config/routes/heplers/route_args.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_state.dart';
 
 class SeatBottomBar extends StatelessWidget {
@@ -11,6 +12,7 @@ class SeatBottomBar extends StatelessWidget {
   final String movieTitle;
   final String cinemaName;
   final String showtime;
+  final DateTime? showtimeDateTime;
   final String showtimeId;
   final String? movieId;
   final String? cinemaId;
@@ -21,6 +23,7 @@ class SeatBottomBar extends StatelessWidget {
     required this.movieTitle,
     required this.cinemaName,
     required this.showtime,
+    this.showtimeDateTime,
     required this.showtimeId,
     this.movieId,
     this.cinemaId,
@@ -28,11 +31,8 @@ class SeatBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: 'ƒ,®',
-      decimalDigits: 0,
-    );
+    final formatter =
+        NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
 
     return Container(
       padding: EdgeInsets.all(AppDimens.spacing16),
@@ -71,18 +71,17 @@ class SeatBottomBar extends StatelessWidget {
                 onPressed: () {
                   context.pushNamed(
                     'bookingSummary',
-                    extra: {
-                      'movieTitle': movieTitle,
-                      'cinemaName': cinemaName,
-                      'showtime': showtime,
-                      'selectedSeats': state.selectedSeats
-                          .map((s) => s.displayName)
-                          .toList(),
-                      'totalPrice': state.totalPrice,
-                      'showtimeId': showtimeId,
-                      'movieId': movieId,
-                      'cinemaId': cinemaId,
-                    },
+                    extra: BookingSummaryArgs(
+                      movieTitle: movieTitle,
+                      cinemaName: cinemaName,
+                      showtime: showtime,
+                      showtimeDateTime: showtimeDateTime,
+                      selectedSeats: state.selectedSeats,
+                      totalPrice: state.totalPrice,
+                      showtimeId: showtimeId,
+                      movieId: movieId,
+                      cinemaId: cinemaId,
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
