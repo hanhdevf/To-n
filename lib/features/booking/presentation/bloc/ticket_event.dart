@@ -34,6 +34,16 @@ class DeleteTicketEvent extends TicketEvent {
   List<Object?> get props => [ticketId];
 }
 
+/// Generate ticket from booking
+class GenerateTicketFromBookingEvent extends TicketEvent {
+  final Booking booking;
+
+  const GenerateTicketFromBookingEvent(this.booking);
+
+  @override
+  List<Object?> get props => [booking];
+}
+
 /// Refresh tickets
 class RefreshTicketsEvent extends TicketEvent {
   const RefreshTicketsEvent();

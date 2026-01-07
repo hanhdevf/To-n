@@ -11,6 +11,9 @@ class SeatBottomBar extends StatelessWidget {
   final String movieTitle;
   final String cinemaName;
   final String showtime;
+  final String showtimeId;
+  final String? movieId;
+  final String? cinemaId;
 
   const SeatBottomBar({
     super.key,
@@ -18,6 +21,9 @@ class SeatBottomBar extends StatelessWidget {
     required this.movieTitle,
     required this.cinemaName,
     required this.showtime,
+    required this.showtimeId,
+    this.movieId,
+    this.cinemaId,
   });
 
   @override
@@ -69,9 +75,13 @@ class SeatBottomBar extends StatelessWidget {
                       'movieTitle': movieTitle,
                       'cinemaName': cinemaName,
                       'showtime': showtime,
-                      'selectedSeats':
-                          state.selectedSeats.map((s) => s.displayName).toList(),
+                      'selectedSeats': state.selectedSeats
+                          .map((s) => s.displayName)
+                          .toList(),
                       'totalPrice': state.totalPrice,
+                      'showtimeId': showtimeId,
+                      'movieId': movieId,
+                      'cinemaId': cinemaId,
                     },
                   );
                 },

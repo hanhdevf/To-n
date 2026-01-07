@@ -11,7 +11,7 @@ class MockPaymentService implements PaymentService {
 
   @override
   Future<Either<Failure, String>> initiatePayment({
-    required Booking booking,
+    Booking? booking,
     required PaymentMethod method,
   }) async {
     try {

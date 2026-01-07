@@ -28,18 +28,37 @@ class BookingsLoaded extends BookingState {
   @override
   List<Object?> get props => [bookings];
 
-  /// Get active bookings
+  /// Get active bookings (confirmed and upcoming only)
   List<Booking> get activeBookings => bookings
-      .where((b) => b.isUpcoming && b.status == BookingStatus.confirmed)
+      .where((b) => b.status == BookingStatus.confirmed && b.isUpcoming)
       .toList();
 
-  /// Get past bookings
+  /// Get past bookings (completed, cancelled, expired, or showtime passed)
   List<Booking> get pastBookings => bookings
-      .where((b) => !b.isUpcoming || b.status != BookingStatus.confirmed)
+      .where((b) =>
+          b.status == BookingStatus.completed ||
+          b.status == BookingStatus.cancelled ||
+          b.status == BookingStatus.expired ||
+          !b.isUpcoming)
       .toList();
 }
 
-/// Booking cancelled
+/// Creating a new booking
+class BookingCreating extends BookingState {
+  const BookingCreating();
+}
+
+/// Booking created successfully
+class BookingCreated extends BookingState {
+  final Booking booking;
+
+  const BookingCreated(this.booking);
+
+  @override
+  List<Object?> get props => [booking];
+}
+
+/// Booking cancelled successfully
 class BookingCancelled extends BookingState {
   final String bookingId;
 

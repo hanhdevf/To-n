@@ -11,11 +11,11 @@ abstract class PaymentEvent extends Equatable {
 
 /// Initiate payment for a booking
 class InitiatePaymentEvent extends PaymentEvent {
-  final Booking booking;
+  final Booking? booking; // Made nullable since mock payment doesn't need it
   final PaymentMethod method;
 
   const InitiatePaymentEvent({
-    required this.booking,
+    this.booking,
     required this.method,
   });
 

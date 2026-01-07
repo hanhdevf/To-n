@@ -106,7 +106,8 @@ class _TicketPageState extends State<TicketPage>
       expiresAt: booking.showtime.add(const Duration(minutes: 30)),
     );
 
-    context.read<TicketBloc>().add(GenerateTicketEvent(booking));
+    // Ticket generation now happens manually from My Bookings
+    // context.read<TicketBloc>().add(GenerateTicketEvent(booking));
   }
 
   @override

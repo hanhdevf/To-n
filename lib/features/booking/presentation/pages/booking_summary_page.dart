@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
+import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
-import 'package:galaxymob/features/booking/domain/entities/seat.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/booking_event.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/booking_state.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_state.dart';
@@ -61,14 +63,36 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
       ),
-      body: BlocListener<PaymentBloc, PaymentState>(
-        listener: (context, state) {
-          if (state is PaymentSuccess) {
-            _onPaymentSuccess(context, state.transactionId);
-          } else if (state is PaymentFailed) {
-            _showErrorDialog(context, state.message);
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<PaymentBloc, PaymentState>(
+            listener: (context, state) {
+              if (state is PaymentSuccess) {
+                _onPaymentSuccess(context, state.transactionId);
+              } else if (state is PaymentFailed) {
+                _showErrorDialog(context, state.message);
+              }
+            },
+          ),
+          BlocListener<BookingBloc, BookingState>(
+            listener: (context, state) {
+              if (state is BookingCreated) {
+                context.pushNamed('myBookings');
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Booking created! Generate your ticket in My Bookings'),
+                    backgroundColor: AppColors.success,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              } else if (state is BookingError) {
+                _showErrorDialog(context, state.message);
+              }
+            },
+          ),
+        ],
         child: SingleChildScrollView(
           padding: EdgeInsets.all(AppDimens.spacing16),
           child: Column(
@@ -110,39 +134,9 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   }
 
   void _handlePayment(BuildContext context) {
-    final bookingFee = widget.totalPrice * 0.05;
-    final finalTotal = widget.totalPrice + bookingFee;
-
-    final booking = Booking(
-      id: 'BOOK-${const Uuid().v4().substring(0, 8).toUpperCase()}',
-      movieId: widget.movieId ?? 'unknown',
-      movieTitle: widget.movieTitle,
-      cinemaId: widget.cinemaId ?? 'unknown',
-      cinemaName: widget.cinemaName,
-      showtimeId: widget.showtimeId ?? 'unknown',
-      showtime: _parseShowtime(widget.showtime),
-      selectedSeats: widget.selectedSeats
-          .map((s) => Seat(
-                id: s,
-                row: s.substring(0, 1),
-                number: int.tryParse(s.substring(1)) ?? 0,
-                type: SeatType.regular,
-                status: SeatStatus.selected,
-                price: widget.totalPrice / widget.selectedSeats.length,
-              ))
-          .toList(),
-      totalPrice: finalTotal,
-      userName: 'Guest User',
-      userEmail: 'guest@galaxymov.com',
-      userPhone: '0000000000',
-      status: BookingStatus.pending,
-      paymentMethod: _selectedPaymentMethod,
-      createdAt: DateTime.now(),
-    );
-
     context.read<PaymentBloc>().add(
           InitiatePaymentEvent(
-            booking: booking,
+            booking: null, // Payment doesn't need full booking object
             method: _selectedPaymentMethod,
           ),
         );
@@ -158,19 +152,40 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   }
 
   void _onPaymentSuccess(BuildContext context, String transactionId) {
+    // After payment success, create booking in Firestore
+    final bookingFee = widget.totalPrice * BookingConstants.bookingFeeRate;
+    final finalTotal = widget.totalPrice + bookingFee;
+
+    context.read<BookingBloc>().add(
+          CreateBookingEvent(
+            movieId: widget.movieId ?? 'unknown',
+            movieTitle: widget.movieTitle,
+            cinemaId: widget.cinemaId ?? 'unknown',
+            cinemaName: widget.cinemaName,
+            showtimeId: widget.showtimeId ?? 'unknown',
+            showtime: _parseShowtime(widget.showtime),
+            selectedSeats: widget.selectedSeats,
+            totalPrice: finalTotal,
+            paymentMethod: _selectedPaymentMethod.displayName,
+            transactionId: transactionId,
+          ),
+        );
+  }
+
+  void _navigateToTicketView(BuildContext context, Booking booking) {
     context.pushReplacementNamed(
       'ticketView',
       extra: {
-        'movieTitle': widget.movieTitle,
-        'cinemaName': widget.cinemaName,
+        'movieTitle': booking.movieTitle,
+        'cinemaName': booking.cinemaName,
         'showtime': widget.showtime,
         'selectedSeats': widget.selectedSeats,
-        'totalPrice': widget.totalPrice + (widget.totalPrice * 0.05),
-        'userName': 'Guest User',
-        'userEmail': 'guest@galaxymov.com',
-        'userPhone': '0000000000',
-        'transactionId': transactionId,
-        'paymentMethod': _selectedPaymentMethod,
+        'totalPrice': booking.totalPrice,
+        'userName': booking.userName,
+        'userEmail': booking.userEmail,
+        'userPhone': booking.userPhone,
+        'transactionId': booking.transactionId,
+        'paymentMethod': booking.paymentMethod,
       },
     );
   }

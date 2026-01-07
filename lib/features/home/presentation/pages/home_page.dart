@@ -6,6 +6,8 @@ import 'package:galaxymob/config/theme/app_dimens.dart';
 
 import 'package:galaxymob/core/di/injection.dart';
 import 'package:galaxymob/core/widgets/section_header.dart';
+import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:galaxymob/features/auth/presentation/bloc/auth_state.dart';
 import 'package:galaxymob/features/home/presentation/widgets/home_sliver_app_bar.dart';
 import 'package:galaxymob/features/home/presentation/widgets/promo_banner.dart';
 import 'package:galaxymob/features/home/presentation/widgets/sections/coming_soon_section.dart';
@@ -26,6 +28,9 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(
+          create: (_) => getIt<AuthBloc>(),
+        ),
         BlocProvider(
           create: (_) => getIt<MovieBloc>()
             ..add(const LoadNowPlayingEvent())
@@ -72,14 +77,29 @@ class _HomeView extends StatelessWidget {
                 child: CustomScrollView(
                   slivers: [
                     // New Collapsing SliverAppBar with Hero Banner
-                    HomeSliverAppBar(
-                      trending: movieState.trending,
-                      onRetry: () => context
-                          .read<MovieBloc>()
-                          .add(const LoadTrendingEvent()),
-                      onMovieTap: (movie) => context.push('/movie/${movie.id}'),
-                      onNotificationTap: () => context.push('/notifications'),
-                      onProfileTap: () => context.go('/profile'),
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, authState) {
+                        print('🔍 [DEBUG] AuthState: ${authState.runtimeType}');
+
+                        final userPhotoUrl = authState is AuthAuthenticated
+                            ? authState.user.photoUrl
+                            : null;
+
+                        print('🔍 [DEBUG] UserPhotoUrl: $userPhotoUrl');
+
+                        return HomeSliverAppBar(
+                          trending: movieState.trending,
+                          onRetry: () => context
+                              .read<MovieBloc>()
+                              .add(const LoadTrendingEvent()),
+                          onMovieTap: (movie) =>
+                              context.push('/movie/${movie.id}'),
+                          onNotificationTap: () =>
+                              context.push('/notifications'),
+                          onProfileTap: () => context.go('/profile'),
+                          userPhotoUrl: userPhotoUrl,
+                        );
+                      },
                     ),
                     SliverToBoxAdapter(
                       child: HomeFeaturedSection(

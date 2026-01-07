@@ -247,6 +247,8 @@ class BookingModel {
         return BookingStatus.pending;
       case 'confirmed':
         return BookingStatus.confirmed;
+      case 'completed':
+        return BookingStatus.completed;
       case 'cancelled':
         return BookingStatus.cancelled;
       case 'expired':
@@ -262,6 +264,8 @@ class BookingModel {
         return 'pending';
       case BookingStatus.confirmed:
         return 'confirmed';
+      case BookingStatus.completed:
+        return 'completed';
       case BookingStatus.cancelled:
         return 'cancelled';
       case BookingStatus.expired:

@@ -6,8 +6,9 @@ import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 abstract class PaymentService {
   /// Initiate a payment for a booking
   /// Returns transaction ID on success
+  /// Booking is nullable for mock payment implementations
   Future<Either<Failure, String>> initiatePayment({
-    required Booking booking,
+    Booking? booking,
     required PaymentMethod method,
   });
 

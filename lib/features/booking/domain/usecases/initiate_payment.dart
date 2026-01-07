@@ -22,11 +22,11 @@ class InitiatePayment implements UseCase<String, PaymentParams> {
 
 /// Parameters for payment
 class PaymentParams extends Equatable {
-  final Booking booking;
+  final Booking? booking;
   final PaymentMethod method;
 
   const PaymentParams({
-    required this.booking,
+    this.booking,
     required this.method,
   });
 

@@ -113,6 +113,7 @@ class Booking extends Equatable {
 enum BookingStatus {
   pending,
   confirmed,
+  completed,
   cancelled,
   expired,
 }

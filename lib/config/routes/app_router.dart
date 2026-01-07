@@ -19,6 +19,7 @@ import 'package:galaxymob/features/cinema/presentation/pages/showtime_selection_
 import 'package:galaxymob/features/cinema/presentation/pages/schedule_view_page.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_event.dart';
+import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/payment_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_event.dart';
@@ -260,25 +261,32 @@ class AppRouter {
       GoRoute(
         path: '/booking/summary',
         name: 'bookingSummary',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return BlocProvider(
-            create: (context) => getIt<PaymentBloc>(),
-            child: BookingSummaryPage(
-              movieTitle: extra['movieTitle'],
-              cinemaName: extra['cinemaName'],
-              showtime: extra['showtime'],
-              selectedSeats: List<String>.from(extra['selectedSeats']),
-              totalPrice: extra['totalPrice'],
-              movieId: extra['movieId'],
-              cinemaId: extra['cinemaId'],
-              showtimeId: extra['showtimeId'],
+          return MaterialPage(
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => getIt<PaymentBloc>(),
+                ),
+                BlocProvider(
+                  create: (context) => getIt<BookingBloc>(),
+                ),
+              ],
+              child: BookingSummaryPage(
+                movieTitle: extra['movieTitle'] as String,
+                cinemaName: extra['cinemaName'] as String,
+                showtime: extra['showtime'] as String,
+                selectedSeats: extra['selectedSeats'] as List<String>,
+                totalPrice: extra['totalPrice'] as double,
+                movieId: extra['movieId'] as String?,
+                cinemaId: extra['cinemaId'] as String?,
+                showtimeId: extra['showtimeId'] as String?,
+              ),
             ),
           );
         },
-      ),
-
-      // Ticket View Route
+      ), // Ticket View Route
       GoRoute(
         path: '/ticket',
         name: 'ticketView',

@@ -12,4 +12,10 @@ abstract class BookingRepository {
 
   /// Create a new booking
   Future<Either<Failure, Booking>> createBooking(Booking booking);
+
+  /// Update booking status
+  Future<Either<Failure, void>> updateBookingStatus(
+    String bookingId,
+    BookingStatus status,
+  );
 }

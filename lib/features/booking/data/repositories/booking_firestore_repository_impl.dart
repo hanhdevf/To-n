@@ -72,6 +72,19 @@ class BookingFirestoreRepositoryImpl implements BookingRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> updateBookingStatus(
+    String bookingId,
+    BookingStatus status,
+  ) async {
+    try {
+      await bookingDataSource.updateBookingStatus(bookingId, status);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   /// Get seat layout for a showtime (bonus method not in original interface)
   Future<Either<Failure, List<List<Seat>>>> getSeatLayout({
     required String showtimeId,

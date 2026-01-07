@@ -8,15 +8,19 @@ import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 class BookingCard extends StatelessWidget {
   final Booking booking;
   final bool isActive;
+  final bool hasTicket;
   final VoidCallback? onCancel;
   final VoidCallback? onViewTicket;
+  final VoidCallback? onGenerateTicket;
 
   const BookingCard({
     super.key,
     required this.booking,
     required this.isActive,
+    this.hasTicket = false,
     this.onCancel,
     this.onViewTicket,
+    this.onGenerateTicket,
   });
 
   @override
@@ -163,18 +167,31 @@ class BookingCard extends StatelessWidget {
                   SizedBox(width: AppDimens.spacing8),
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: onViewTicket,
-                      icon: const Icon(Icons.qr_code, size: 18),
-                      label: const Text('View Ticket'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppDimens.spacing12,
-                        ),
-                      ),
-                    ),
+                    child: hasTicket
+                        ? ElevatedButton.icon(
+                            onPressed: onViewTicket,
+                            icon: const Icon(Icons.qr_code, size: 18),
+                            label: const Text('View Ticket'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppDimens.spacing12,
+                              ),
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: onGenerateTicket,
+                            icon: const Icon(Icons.qr_code_2, size: 18),
+                            label: const Text('Generate Ticket'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppDimens.spacing12,
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),

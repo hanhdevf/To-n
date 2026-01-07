@@ -5,6 +5,7 @@ import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
 import 'package:galaxymob/core/widgets/shimmer_loading.dart';
 import 'package:galaxymob/core/widgets/state_widgets.dart';
+import 'package:galaxymob/core/widgets/gradient_avatar.dart';
 import 'package:galaxymob/features/movies/domain/entities/movie.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_state.dart';
 import 'package:galaxymob/features/movies/presentation/widgets/hero_banner.dart';
@@ -16,6 +17,7 @@ class HomeSliverAppBar extends StatelessWidget {
   final void Function(Movie) onMovieTap;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onProfileTap;
+  final String? userPhotoUrl; // User avatar photo URL
 
   static const double expandedHeight = 480.0;
   static const double collapsedHeight = kToolbarHeight;
@@ -27,6 +29,7 @@ class HomeSliverAppBar extends StatelessWidget {
     required this.onMovieTap,
     this.onNotificationTap,
     this.onProfileTap,
+    this.userPhotoUrl, // Optional user photo
   });
 
   bool _isLoading() =>
@@ -170,10 +173,18 @@ class HomeSliverAppBar extends StatelessWidget {
                 onTap: onNotificationTap,
               ),
               SizedBox(width: AppDimens.spacing12),
-              _buildIconButton(
-                icon: Icons.person_outline,
-                onTap: onProfileTap,
-              ),
+              // Profile Avatar or Icon
+              if (userPhotoUrl != null)
+                GradientAvatar(
+                  photoUrl: userPhotoUrl,
+                  size: 40,
+                  onTap: onProfileTap,
+                )
+              else
+                _buildIconButton(
+                  icon: Icons.person_outline,
+                  onTap: onProfileTap,
+                ),
             ],
           ),
         ],

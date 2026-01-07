@@ -22,6 +22,7 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
   }) : super(const TicketInitial()) {
     on<LoadTicketsEvent>(_onLoadTickets);
     on<GenerateTicketEvent>(_onGenerateTicket);
+    on<GenerateTicketFromBookingEvent>(_onGenerateTicketFromBooking);
     on<DeleteTicketEvent>(_onDeleteTicket);
     on<RefreshTicketsEvent>(_onRefreshTickets);
   }
@@ -72,6 +73,54 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
         saveResult.fold(
           (failure) => emit(TicketError(failure.message)),
           (_) => emit(TicketGenerated(ticket)),
+        );
+      },
+    );
+  }
+
+  Future<void> _onGenerateTicketFromBooking(
+    GenerateTicketFromBookingEvent event,
+    Emitter<TicketState> emit,
+  ) async {
+    emit(const TicketsLoading());
+
+    // Generate ticket from booking
+    final ticketResult = await generateTicket(
+      BookingParams(booking: event.booking),
+    );
+
+    await ticketResult.fold(
+      (failure) async => emit(TicketError(failure.message)),
+      (ticket) async {
+        // Save ticket to local storage
+        final saveResult = await saveTicket(TicketParams(ticket: ticket));
+
+        await saveResult.fold(
+          (failure) async => emit(TicketError(failure.message)),
+          (_) async {
+            // Emit generated state then reload all tickets
+            emit(TicketGenerated(ticket));
+            // Reload tickets to update list
+            final reloadResult = await getUserTickets(NoParams());
+            reloadResult.fold(
+              (failure) => emit(TicketError(failure.message)),
+              (tickets) {
+                final now = DateTime.now();
+                final upcomingTickets = tickets
+                    .where((t) => t.booking.showtime.isAfter(now))
+                    .toList();
+                final pastTickets = tickets
+                    .where((t) => t.booking.showtime.isBefore(now))
+                    .toList();
+
+                emit(TicketsLoaded(
+                  tickets: tickets,
+                  upcomingTickets: upcomingTickets,
+                  pastTickets: pastTickets,
+                ));
+              },
+            );
+          },
         );
       },
     );

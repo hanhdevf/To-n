@@ -50,6 +50,8 @@ import 'package:galaxymob/features/booking/domain/repositories/booking_repositor
 import 'package:galaxymob/features/booking/domain/repositories/seat_repository.dart';
 import 'package:galaxymob/features/booking/domain/usecases/get_user_bookings.dart';
 import 'package:galaxymob/features/booking/domain/usecases/cancel_booking.dart';
+import 'package:galaxymob/features/booking/domain/usecases/create_booking.dart';
+import 'package:galaxymob/features/booking/domain/usecases/update_booking_status.dart';
 import 'package:galaxymob/features/booking/domain/usecases/get_user_tickets.dart';
 import 'package:galaxymob/features/booking/domain/usecases/generate_ticket.dart';
 import 'package:galaxymob/features/booking/domain/usecases/save_ticket.dart';
@@ -244,10 +246,12 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  // Booking UseCases
   getIt
       .registerLazySingleton(() => GetUserBookings(getIt<BookingRepository>()));
   getIt.registerLazySingleton(() => CancelBooking(getIt<BookingRepository>()));
+  getIt.registerLazySingleton(() => CreateBooking(getIt<BookingRepository>()));
+  getIt.registerLazySingleton(
+      () => UpdateBookingStatus(getIt<BookingRepository>()));
   getIt.registerLazySingleton(() => GetUserTickets(getIt<TicketService>()));
   getIt.registerLazySingleton(() => GenerateTicket(getIt<TicketService>()));
   getIt.registerLazySingleton(() => SaveTicket(getIt<TicketService>()));
@@ -283,6 +287,9 @@ Future<void> configureDependencies() async {
     () => BookingBloc(
       getUserBookings: getIt<GetUserBookings>(),
       cancelBooking: getIt<CancelBooking>(),
+      createBooking: getIt<CreateBooking>(),
+      updateBookingStatus: getIt<UpdateBookingStatus>(),
+      auth: getIt<FirebaseAuth>(),
     ),
   );
 

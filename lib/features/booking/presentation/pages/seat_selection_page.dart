@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
+import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_bloc.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_state.dart';
 import 'package:galaxymob/features/booking/presentation/widgets/seat_selection/seat_bottom_bar.dart';
 import 'package:galaxymob/features/booking/presentation/widgets/seat_selection/seat_grid.dart';
+import 'package:galaxymob/features/booking/presentation/widgets/seat_selection/seat_grid_shimmer.dart';
 import 'package:galaxymob/features/booking/presentation/widgets/seat_selection/seat_legend.dart';
 import 'package:galaxymob/features/booking/presentation/widgets/seat_selection/seat_movie_info.dart';
 
-/// Seat selection page with interactive grid
 class SeatSelectionPage extends StatelessWidget {
   final String showtimeId;
   final String movieTitle;
   final String cinemaName;
   final String showtime;
   final double basePrice;
+  final String? movieId;
+  final String? cinemaId;
 
   const SeatSelectionPage({
     super.key,
@@ -24,6 +27,8 @@ class SeatSelectionPage extends StatelessWidget {
     required this.cinemaName,
     required this.showtime,
     required this.basePrice,
+    this.movieId,
+    this.cinemaId,
   });
 
   @override
@@ -46,7 +51,7 @@ class SeatSelectionPage extends StatelessWidget {
             child: BlocBuilder<SeatBloc, SeatState>(
               builder: (context, state) {
                 if (state is SeatLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const SeatGridShimmer();
                 } else if (state is SeatLayoutLoaded) {
                   return SeatGrid(state: state);
                 } else if (state is SeatError) {
@@ -68,6 +73,9 @@ class SeatSelectionPage extends StatelessWidget {
             movieTitle: movieTitle,
             cinemaName: cinemaName,
             showtime: showtime,
+            showtimeId: showtimeId,
+            movieId: movieId,
+            cinemaId: cinemaId,
           );
         },
       ),
@@ -76,7 +84,7 @@ class SeatSelectionPage extends StatelessWidget {
 
   Widget _buildScreenIndicator() {
     return Container(
-      margin: const EdgeInsets.all(24),
+      margin: EdgeInsets.all(AppDimens.spacing24),
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(

@@ -31,6 +31,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterRequestedEvent>(_onRegisterRequested);
     on<LogoutRequestedEvent>(_onLogoutRequested);
     on<LoadProfileEvent>(_onLoadProfile);
+
+    // Auto-check auth status on initialization
+    add(const CheckAuthStatusEvent());
   }
 
   /// Check if user is already logged in

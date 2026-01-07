@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:galaxymob/features/booking/data/models/booking_model.dart';
+import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 import 'package:galaxymob/features/cinema/data/models/showtime_model.dart';
 
 /// Firestore data source for booking operations
@@ -83,14 +84,79 @@ class BookingFirestoreDataSource {
     }
   }
 
-  /// Cancel booking (marks as cancelled, doesn't free seats for simplicity)
+  /// Cancel booking and release seats
   Future<void> cancelBooking(String bookingId) async {
     try {
-      await _firestore.collection('bookings').doc(bookingId).update({
-        'status': 'cancelled',
-      });
+      // First, get the booking to know which seats to release
+      final bookingDoc =
+          await _firestore.collection('bookings').doc(bookingId).get();
+      if (!bookingDoc.exists) {
+        throw Exception('Booking not found');
+      }
+
+      final bookingData = bookingDoc.data()!;
+      final showtimeId = bookingData['showtime_id'] as String;
+
+      // Safely get seat IDs, handle null case
+      final seatsData = bookingData['selected_seats'];
+      final List<String> seats = [];
+
+      if (seatsData != null && seatsData is List) {
+        for (var seatData in seatsData) {
+          if (seatData is Map && seatData['id'] != null) {
+            seats.add(seatData['id'] as String);
+          }
+        }
+      }
+
+      // Update booking status and release seats in showtime atomically
+      final batch = _firestore.batch();
+
+      // Update booking status
+      batch.update(
+        _firestore.collection('bookings').doc(bookingId),
+        {'status': 'cancelled'},
+      );
+
+      // Remove seats from showtime's bookedSeats
+      batch.update(
+        _firestore.collection('showtimes').doc(showtimeId),
+        {'booked_seats': FieldValue.arrayRemove(seats)},
+      );
+
+      await batch.commit();
     } catch (e) {
       throw Exception('Failed to cancel booking: $e');
+    }
+  }
+
+  /// Update booking status (e.g., to 'completed' when ticket is generated)
+  Future<void> updateBookingStatus(
+    String bookingId,
+    BookingStatus status,
+  ) async {
+    try {
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'status': _bookingStatusToString(status),
+      });
+    } catch (e) {
+      throw Exception('Failed to update booking status: $e');
+    }
+  }
+
+  /// Helper to convert BookingStatus enum to string
+  String _bookingStatusToString(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.pending:
+        return 'pending';
+      case BookingStatus.confirmed:
+        return 'confirmed';
+      case BookingStatus.completed:
+        return 'completed';
+      case BookingStatus.cancelled:
+        return 'cancelled';
+      case BookingStatus.expired:
+        return 'expired';
     }
   }
 
