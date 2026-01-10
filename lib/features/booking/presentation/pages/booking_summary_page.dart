@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
-import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
 import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/booking_bloc.dart';
@@ -75,7 +74,11 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
           BlocListener<PaymentBloc, PaymentState>(
             listener: (context, state) {
               if (state is PaymentSuccess) {
-                _onPaymentSuccess(context, state.transactionId);
+                _onPaymentSuccess(
+                  context,
+                  state.transactionId,
+                  state.resolvedShowtime,
+                );
               } else if (state is PaymentFailed) {
                 _showErrorDialog(context, state.message);
               }
@@ -136,17 +139,17 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
           InitiatePaymentEvent(
             booking: null, // Payment doesn't need full booking object
             method: _selectedPaymentMethod,
+            showtimeText: widget.showtime,
+            showtimeDateTime: widget.showtimeDateTime,
           ),
         );
   }
 
-  void _onPaymentSuccess(BuildContext context, String transactionId) {
-    // After payment success, create booking in Firestore
-    final bookingFee = widget.totalPrice * BookingConstants.bookingFeeRate;
-    final finalTotal = widget.totalPrice + bookingFee;
-    final bookingDateTime =
-        widget.showtimeDateTime ?? _fallbackParseTime(widget.showtime);
-
+  void _onPaymentSuccess(
+    BuildContext context,
+    String transactionId,
+    DateTime bookingDateTime,
+  ) {
     context.read<BookingBloc>().add(
           CreateBookingEvent(
             movieId: widget.movieId ?? 'unknown',
@@ -156,7 +159,7 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
             showtimeId: widget.showtimeId ?? 'unknown',
             showtime: bookingDateTime,
             selectedSeats: widget.selectedSeats,
-            totalPrice: finalTotal,
+            totalPrice: widget.totalPrice,
             paymentMethod: _selectedPaymentMethod,
             transactionId: transactionId,
           ),
@@ -249,25 +252,4 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     );
   }
 
-  DateTime _fallbackParseTime(String showtimeString) {
-    // Expect HH:mm, fallback to now if parsing fails
-    try {
-      final now = DateTime.now();
-      final parts = showtimeString.split(':');
-      if (parts.length == 2) {
-        final hour = int.tryParse(parts[0]);
-        final minute = int.tryParse(parts[1]);
-        if (hour != null && minute != null) {
-          return DateTime(
-            now.year,
-            now.month,
-            now.day,
-            hour,
-            minute,
-          );
-        }
-      }
-    } catch (_) {}
-    return DateTime.now();
-  }
 }

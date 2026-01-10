@@ -2,8 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import 'package:galaxymob/features/booking/domain/constants/booking_constants.dart';
-import 'package:galaxymob/features/booking/domain/entities/booking.dart';
-import 'package:galaxymob/features/booking/domain/entities/seat.dart';
 import 'package:galaxymob/features/booking/domain/usecases/cancel_booking.dart';
 import 'package:galaxymob/features/booking/domain/usecases/create_booking.dart';
 import 'package:galaxymob/features/booking/domain/usecases/get_user_bookings.dart';
@@ -113,6 +111,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       final bookingId =
           '${BookingConstants.bookingIdPrefix}${const Uuid().v4().substring(0, 8).toUpperCase()}';
 
+      // Compute booking fee and final total
+      final bookingFee = event.totalPrice * BookingConstants.bookingFeeRate;
+      final totalWithFee = event.totalPrice + bookingFee;
+
       final params = BookingParams(
         bookingId: bookingId,
         movieId: event.movieId,
@@ -122,7 +124,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         showtimeId: event.showtimeId,
         showtime: event.showtime,
         selectedSeats: event.selectedSeats,
-        totalPrice: event.totalPrice,
+        totalPrice: totalWithFee,
         userName: user.displayName ?? 'User',
         userEmail: user.email ?? '',
         userPhone: user.phoneNumber ?? '',

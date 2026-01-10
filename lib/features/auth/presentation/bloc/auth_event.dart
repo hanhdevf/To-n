@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:galaxymob/features/auth/domain/entities/user.dart';
 
 /// Authentication Events
 abstract class AuthEvent extends Equatable {

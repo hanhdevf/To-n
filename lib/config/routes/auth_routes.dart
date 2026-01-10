@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:galaxymob/core/di/injection.dart';
-import 'package:galaxymob/config/routes/heplers/route_wrappers.dart';
+import 'package:galaxymob/config/routes/route_wrappers.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:galaxymob/features/auth/presentation/pages/login_page.dart';
 import 'package:galaxymob/features/auth/presentation/pages/register_page.dart';

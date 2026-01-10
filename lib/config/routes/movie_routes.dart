@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:galaxymob/core/di/injection.dart';
-import 'package:galaxymob/config/routes/heplers/route_args.dart';
+import 'package:galaxymob/config/routes/route_args.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_bloc.dart';
 import 'package:galaxymob/features/cinema/presentation/bloc/cinema_event.dart';
 import 'package:galaxymob/features/cinema/presentation/pages/schedule_view_page.dart';

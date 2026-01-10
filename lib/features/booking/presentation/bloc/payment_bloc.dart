@@ -33,7 +33,13 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
     result.fold(
       (failure) => emit(PaymentFailed(failure.message)),
-      (transactionId) => emit(PaymentSuccess(transactionId)),
+      (transactionId) {
+        final resolvedShowtime = _resolveShowtime(
+          event.showtimeDateTime,
+          event.showtimeText,
+        );
+        emit(PaymentSuccess(transactionId, resolvedShowtime));
+      },
     );
   }
 
@@ -51,7 +57,8 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
       (failure) => emit(PaymentFailed(failure.message)),
       (isVerified) {
         if (isVerified) {
-          emit(PaymentSuccess(event.transactionId));
+          // In verify flow we don't have showtime context, pass current time
+          emit(PaymentSuccess(event.transactionId, DateTime.now()));
         } else {
           emit(const PaymentFailed('Payment verification failed'));
         }
@@ -64,5 +71,21 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     Emitter<PaymentState> emit,
   ) {
     emit(const PaymentInitial());
+  }
+
+  DateTime _resolveShowtime(DateTime? provided, String fallbackText) {
+    if (provided != null) return provided;
+    try {
+      final now = DateTime.now();
+      final parts = fallbackText.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          return DateTime(now.year, now.month, now.day, hour, minute);
+        }
+      }
+    } catch (_) {}
+    return DateTime.now();
   }
 }

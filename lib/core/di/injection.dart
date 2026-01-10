@@ -280,6 +280,7 @@ Future<void> configureDependencies() async {
       generateTicket: getIt<GenerateTicket>(),
       saveTicket: getIt<SaveTicket>(),
       deleteTicket: getIt<DeleteTicket>(),
+      updateBookingStatus: getIt<UpdateBookingStatus>(),
     ),
   );
 

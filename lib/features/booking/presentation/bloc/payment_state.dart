@@ -21,11 +21,12 @@ class PaymentProcessing extends PaymentState {
 /// Payment successful
 class PaymentSuccess extends PaymentState {
   final String transactionId;
+  final DateTime resolvedShowtime;
 
-  const PaymentSuccess(this.transactionId);
+  const PaymentSuccess(this.transactionId, this.resolvedShowtime);
 
   @override
-  List<Object?> get props => [transactionId];
+  List<Object?> get props => [transactionId, resolvedShowtime];
 }
 
 /// Payment failed

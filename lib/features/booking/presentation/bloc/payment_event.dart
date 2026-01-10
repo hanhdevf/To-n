@@ -13,14 +13,18 @@ abstract class PaymentEvent extends Equatable {
 class InitiatePaymentEvent extends PaymentEvent {
   final Booking? booking; // Made nullable since mock payment doesn't need it
   final PaymentMethod method;
+  final String showtimeText;
+  final DateTime? showtimeDateTime;
 
   const InitiatePaymentEvent({
     this.booking,
     required this.method,
+    required this.showtimeText,
+    this.showtimeDateTime,
   });
 
   @override
-  List<Object?> get props => [booking, method];
+  List<Object?> get props => [booking, method, showtimeText, showtimeDateTime];
 }
 
 /// Verify a payment transaction

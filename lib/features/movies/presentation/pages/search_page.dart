@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
-import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
 import 'package:galaxymob/core/widgets/widgets.dart';
 import 'package:galaxymob/features/movies/domain/entities/genre.dart';
@@ -11,8 +9,6 @@ import 'package:galaxymob/features/movies/presentation/bloc/movie_bloc.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_event.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_state.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
-import 'package:galaxymob/features/movies/presentation/bloc/genre_state.dart';
-import 'package:galaxymob/features/movies/presentation/widgets/genre_chip_list.dart';
 import 'package:galaxymob/features/movies/presentation/widgets/search/search_filter_bottom_sheet.dart';
 import 'package:galaxymob/features/movies/presentation/widgets/search/search_initial_state.dart';
 import 'package:galaxymob/features/movies/presentation/widgets/search/search_results_grid.dart';

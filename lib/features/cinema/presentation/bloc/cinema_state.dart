@@ -34,14 +34,19 @@ class CinemasLoaded extends CinemaState {
 class ShowtimesLoaded extends CinemaState {
   final Map<String, List<Showtime>> showtimesByCinema;
   final List<Cinema> cinemas;
+  final DateTime selectedDate;
+  final List<DateTime> availableDates;
 
   const ShowtimesLoaded({
     required this.showtimesByCinema,
     required this.cinemas,
+    required this.selectedDate,
+    required this.availableDates,
   });
 
   @override
-  List<Object?> get props => [showtimesByCinema, cinemas];
+  List<Object?> get props =>
+      [showtimesByCinema, cinemas, selectedDate, availableDates];
 }
 
 /// Error state

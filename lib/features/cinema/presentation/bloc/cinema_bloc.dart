@@ -15,6 +15,7 @@ class CinemaBloc extends Bloc<CinemaEvent, CinemaState> {
   }) : super(const CinemaInitial()) {
     on<LoadNearbyCinemasEvent>(_onLoadNearbyCinemas);
     on<LoadShowtimesEvent>(_onLoadShowtimes);
+    on<SelectShowtimeDateEvent>(_onSelectShowtimeDate);
     on<LoadScheduleEvent>(_onLoadSchedule);
   }
 
@@ -41,27 +42,21 @@ class CinemaBloc extends Bloc<CinemaEvent, CinemaState> {
     LoadShowtimesEvent event,
     Emitter<CinemaState> emit,
   ) async {
-    emit(const CinemaLoading());
+    await _loadShowtimesForDate(
+      movieId: event.movieId,
+      date: event.date,
+      emit: emit,
+    );
+  }
 
-    // First get cinemas
-    final cinemasResult = await getNearbyCinemas(const LocationParams());
-
-    await cinemasResult.fold(
-      (failure) async => emit(CinemaError(failure.message)),
-      (cinemas) async {
-        // Then get showtimes
-        final showtimesResult = await getShowtimes(
-          ShowtimeParams(movieId: event.movieId, date: event.date),
-        );
-
-        showtimesResult.fold(
-          (failure) => emit(CinemaError(failure.message)),
-          (showtimes) => emit(ShowtimesLoaded(
-            showtimesByCinema: showtimes,
-            cinemas: cinemas,
-          )),
-        );
-      },
+  Future<void> _onSelectShowtimeDate(
+    SelectShowtimeDateEvent event,
+    Emitter<CinemaState> emit,
+  ) async {
+    await _loadShowtimesForDate(
+      movieId: event.movieId,
+      date: event.date,
+      emit: emit,
     );
   }
 
@@ -78,5 +73,41 @@ class CinemaBloc extends Bloc<CinemaEvent, CinemaState> {
       showtimesByMovie: const {},
       date: event.date,
     ));
+  }
+
+  Future<void> _loadShowtimesForDate({
+    required int movieId,
+    required DateTime date,
+    required Emitter<CinemaState> emit,
+  }) async {
+    emit(const CinemaLoading());
+
+    final cinemasResult = await getNearbyCinemas(const LocationParams());
+
+    await cinemasResult.fold(
+      (failure) async => emit(CinemaError(failure.message)),
+      (cinemas) async {
+        final showtimesResult = await getShowtimes(
+          ShowtimeParams(movieId: movieId, date: date),
+        );
+
+        showtimesResult.fold(
+          (failure) => emit(CinemaError(failure.message)),
+          (showtimes) => emit(
+            ShowtimesLoaded(
+              showtimesByCinema: showtimes,
+              cinemas: cinemas,
+              selectedDate: date,
+              availableDates: _generateAvailableDates(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<DateTime> _generateAvailableDates() {
+    final now = DateTime.now();
+    return List.generate(7, (index) => now.add(Duration(days: index)));
   }
 }

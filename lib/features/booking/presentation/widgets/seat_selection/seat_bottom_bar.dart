@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:galaxymob/config/theme/app_colors.dart';
 import 'package:galaxymob/config/theme/app_dimens.dart';
 import 'package:galaxymob/config/theme/app_text_styles.dart';
-import 'package:galaxymob/config/routes/heplers/route_args.dart';
+import 'package:galaxymob/config/routes/route_args.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/seat_state.dart';
 
 class SeatBottomBar extends StatelessWidget {

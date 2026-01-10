@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:galaxymob/core/di/injection.dart';
 import 'package:galaxymob/core/widgets/main_navigation_shell.dart';
-import 'package:galaxymob/config/routes/heplers/route_wrappers.dart';
+import 'package:galaxymob/config/routes/route_wrappers.dart';
 import 'package:galaxymob/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:galaxymob/features/auth/presentation/pages/profile_page.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_bloc.dart';
@@ -11,7 +11,6 @@ import 'package:galaxymob/features/booking/presentation/pages/my_tickets_page.da
 import 'package:galaxymob/features/movies/presentation/bloc/genre_bloc.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/genre_event.dart';
 import 'package:galaxymob/features/movies/presentation/bloc/movie_bloc.dart';
-import 'package:galaxymob/features/movies/presentation/bloc/movie_event.dart';
 import 'package:galaxymob/features/movies/presentation/pages/search_page.dart';
 import 'package:galaxymob/features/home/presentation/pages/home_page.dart';
 

@@ -36,6 +36,20 @@ class LoadShowtimesEvent extends CinemaEvent {
   List<Object?> get props => [movieId, date];
 }
 
+/// Select a different date and reload showtimes
+class SelectShowtimeDateEvent extends CinemaEvent {
+  final int movieId;
+  final DateTime date;
+
+  const SelectShowtimeDateEvent({
+    required this.movieId,
+    required this.date,
+  });
+
+  @override
+  List<Object?> get props => [movieId, date];
+}
+
 /// Load schedule for all movies on a specific date
 class LoadScheduleEvent extends CinemaEvent {
   final DateTime date;

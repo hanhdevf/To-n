@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:galaxymob/core/usecase/usecase.dart';
+import 'package:galaxymob/features/booking/domain/entities/booking.dart';
 import 'package:galaxymob/features/booking/domain/usecases/delete_ticket.dart';
 import 'package:galaxymob/features/booking/domain/usecases/generate_ticket.dart';
 import 'package:galaxymob/features/booking/domain/usecases/get_user_tickets.dart';
 import 'package:galaxymob/features/booking/domain/usecases/save_ticket.dart';
+import 'package:galaxymob/features/booking/domain/usecases/update_booking_status.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_event.dart';
 import 'package:galaxymob/features/booking/presentation/bloc/ticket_state.dart';
 
@@ -13,12 +15,14 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
   final GenerateTicket generateTicket;
   final SaveTicket saveTicket;
   final DeleteTicket deleteTicket;
+  final UpdateBookingStatus updateBookingStatus;
 
   TicketBloc({
     required this.getUserTickets,
     required this.generateTicket,
     required this.saveTicket,
     required this.deleteTicket,
+    required this.updateBookingStatus,
   }) : super(const TicketInitial()) {
     on<LoadTicketsEvent>(_onLoadTickets);
     on<GenerateTicketEvent>(_onGenerateTicket);
@@ -72,7 +76,10 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
 
         saveResult.fold(
           (failure) => emit(TicketError(failure.message)),
-          (_) => emit(TicketGenerated(ticket)),
+          (_) async {
+            await _markBookingCompleted(ticket.booking.id);
+            emit(TicketGenerated(ticket));
+          },
         );
       },
     );
@@ -98,6 +105,7 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
         await saveResult.fold(
           (failure) async => emit(TicketError(failure.message)),
           (_) async {
+            await _markBookingCompleted(ticket.booking.id);
             // Emit generated state then reload all tickets
             emit(TicketGenerated(ticket));
             // Reload tickets to update list
@@ -145,5 +153,14 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
     Emitter<TicketState> emit,
   ) async {
     add(const LoadTicketsEvent());
+  }
+
+  Future<void> _markBookingCompleted(String bookingId) async {
+    await updateBookingStatus(
+      UpdateBookingStatusParams(
+        bookingId: bookingId,
+        status: BookingStatus.completed,
+      ),
+    );
   }
 }

@@ -83,22 +83,6 @@ class _MyBookingsPageState extends State<MyBookingsPage>
           BlocListener<TicketBloc, TicketState>(
             listener: (context, state) {
               if (state is TicketGenerated) {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) return;
-
-                // Mark booking as completed
-                context.read<BookingBloc>().add(
-                      UpdateBookingStatusEvent(
-                        state.ticket.booking.id,
-                        BookingStatus.completed,
-                      ),
-                    );
-
-                // Force refresh bookings to update UI immediately
-                context.read<BookingBloc>().add(
-                      RefreshBookingsEvent(user.uid),
-                    );
-
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
